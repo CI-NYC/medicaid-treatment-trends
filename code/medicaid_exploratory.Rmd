@@ -1,0 +1,550 @@
+---
+title: "medicaid_exploratory"
+author: "Anton Hung"
+date: "2024-02-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(arrow)
+library(tidyverse)
+library(lubridate)
+library(data.table)
+library(furrr)
+library(tidylog)
+library(tictoc)
+library(doFuture)
+
+load_dir <- "/mnt/general-data/disability/create_cohort/"
+```
+
+
+# Separated by year
+```{r}
+table(year(dts_cohorts$washout_start_dt))
+prop.table(table(year(dts_cohorts$washout_start_dt)))
+```
+
+
+```{r}
+table(dem_df$RACE_ETHNCTY_CD)
+prop.table(table(dem_df$RACE_ETHNCTY_CD))
+
+sum(prop.table(table(dem_df$RACE_ETHNCTY_CD)))
+```
+
+
+```{r}
+cohort <- readRDS(paste0(load_dir, "final/desc_cohort.rds"))
+setDT(cohort)
+# cohort <- cohort[, c("BENE_ID",
+#                      "washout_start_dt",
+#                      "washout_cal_end_dt",
+#                      # "washout_12mos_end_dt",
+#                      "study_cal_end_dt",
+#                      "ETHNCTY_CD",
+#                      "RACE_ETHNCTY_CD",
+#                      # "RACE_ETHNCTY_EXP_CD",
+#                      "disability_washout_cal",
+#                      # "disability_washout_12mos_cal",
+#                      # "disability_washout_cont",
+#                      # "pain_dt",
+#                      "pain_washout_cal",
+#                      # "pain_washout_12mos_cal",
+#                      # "pain_washout_cont",
+#                      "pain_study_cal",
+#                      # "pain_study_cont",
+#                      # "opioid_pain_dt",
+#                      "opioid_pain_washout_cal",
+#                      # "opioid_pain_washout_12mos_cal",
+#                      # "opioid_pain_washout_cont",
+#                      "opioid_pain_study_cal"
+#                      # "opioid_pain_study_cont"
+# )]
+
+cohort <- cohort[, c("BENE_ID",
+                     "washout_start_dt",
+                     "washout_cal_end_dt",
+                     # "washout_12mos_end_dt",
+                     "study_cal_end_dt",
+                     "dem_race",
+                     "dem_race_cond",
+                     "disability_pain_cal",
+                     "opioid_pain_washout_cal"
+                     )]
+head(cohort)
+cohort2 <- cohort[1:20,]
+```
+
+```{r}
+names(cohort2)
+```
+
+
+```{r}
+names(cohort)
+```
+
+```{r}
+cohort[, pain_or_disability:=ifelse(disability_washout_cal & pain_washout_cal, "both",
+                                    ifelse(disability_washout_cal, "disability",
+                                           ifelse(pain_washout_cal, "pain", "neither")))]
+cohort
+```
+```{r}
+table(cohort$pain_or_disability)
+prop.table(table(cohort$pain_or_disability))
+```
+
+
+# MME
+
+```{r}
+all_opioids_clean <- readRDS(paste0("/mnt/general-data/disability/mediation_unsafe_pain_mgmt/all_pain_opioids.rds"))
+
+setDT(all_opioids_clean)
+setkey(all_opioids_clean, BENE_ID)
+all_opioids_clean <- all_opioids_clean[, .(BENE_ID, NDC, opioid, mme_strength_per_day, rx_start_dt, rx_end_dt)]
+
+# Merge to the analysis cohort
+all_opioids_clean_merged <- merge(all_opioids_clean, cohort, by = "BENE_ID")
+
+```
+
+
+```{r}
+all_opioids_clean <- readRDS(paste0("/mnt/general-data/disability/mediation_unsafe_pain_mgmt/all_pain_opioids.rds"))
+
+setDT(all_opioids_clean)
+setkey(all_opioids_clean, BENE_ID)
+all_opioids_clean <- all_opioids_clean[, .(BENE_ID, NDC, opioid, mme_strength_per_day, rx_start_dt, rx_end_dt)]
+
+# Merge to the analysis cohort
+all_opioids_clean_merged <- merge(all_opioids_clean, cohort2, by = "BENE_ID")
+
+# Filter opioid prescriptions to only contain those within mediator period
+all_opioids_clean_mediator_period <- all_opioids_clean_merged[
+    all_opioids_clean_merged$rx_start_dt %within% interval(
+        all_opioids_clean_merged$washout_start_dt, all_opioids_clean_merged$washout_cal_end_dt
+    ), 
+]
+
+# Calculate max daily dose -----------------------------------------------------
+
+# Group by beneficiary and create a list column containing each beneficiairy's data
+opioids <- all_opioids_clean_mediator_period[, list(data = list(data.table(.SD))), by = BENE_ID]
+
+# Create function
+calculate_max_daily_dose <- function(data) {
+    to_modify <- copy(data)
+    
+    # Calculate the date limit based on washout_cal_end_dt + 182 days
+    washout_date_limit <- to_modify$washout_cal_end_dt #+ lubridate::days(182)
+    
+    long <- to_modify[, .(date = seq(rx_start_dt, rx_end_dt, by = "1 day"), 
+                          NDC, opioid, mme_strength_per_day), by = .(seq_len(nrow(data)))
+                      ][date <= washout_date_limit, ]  # Filter rows based on date limit
+    
+    long[, .(total_mme_strength = sum(mme_strength_per_day, na.rm = TRUE))
+         ][, .(mediator_monthly_dose_mme = total_mme_strength/6)]
+}
+# calculate_max_daily_dose <- function(data) {
+#     to_modify <- copy(data)
+#     
+#     # Calculate the date limit based on washout_cal_end_dt + 182 days
+#     washout_date_limit <- to_modify$washout_cal_end_dt + lubridate::days(182)
+#     
+#     long <- to_modify[, .(date = seq(rx_start_dt, rx_end_dt, by = "1 day"), 
+#                           NDC, opioid, mme_strength_per_day), by = .(seq_len(nrow(data)))
+#                       ][date <= washout_date_limit, ]  # Filter rows based on date limit
+#     
+#     long[, .(total_mme_strength = sum(mme_strength_per_day, na.rm = TRUE)), by = .(date)
+#          ][, .(mediator_max_daily_dose_mme = max(total_mme_strength))]
+# }
+
+plan(multisession, workers = 50)
+
+# Apply function
+out <- foreach(data = opioids$data, 
+               id = opioids$BENE_ID, 
+               .combine = "rbind",
+               .options.future = list(chunk.size = 1e4)) %dofuture% {
+                   out <- calculate_max_daily_dose(data)
+                   out$BENE_ID <- id
+                   setcolorder(out, "BENE_ID")
+                   out
+               }
+
+plan(sequential)
+
+saveRDS(out, file.path(save_dir, "mediator_monthly_dose_mme.rds"))
+```
+
+
+
+```{r}
+
+out
+```
+
+```{r}
+save_dir <- "/home/amh2389/medicaid"
+
+# write_rds(out, file.path(save_dir, "mediator_max_daily_dose_mme.rds"))
+```
+
+```{r}
+out <- read_rds(file.path(save_dir, "mediator_max_daily_dose_mme.rds"))
+
+# Right join with cohort
+cohort <- merge(out, cohort, all.y = TRUE, by = "BENE_ID")
+
+# Convert NAs to 0 for observations in the cohort that didn't have a claim
+cohort[, mediator_max_daily_dose_mme := fifelse(is.na(mediator_max_daily_dose_mme), 0, mediator_max_daily_dose_mme)]
+```
+
+# Days covered
+```{r}
+otl2 <- readRDS("/mnt/general-data/disability/mediation_unsafe_pain_mgmt/otl_opioids_pain_mme.rds")
+rxl2 <- readRDS("/mnt/general-data/disability/mediation_unsafe_pain_mgmt/rxl_opioids_pain_mme.rds")
+
+# otl2 <- otl2[,c("BENE_ID", "LINE_SRVC_BGN_DT")]
+cohort_cal_end_date <- cohort[, c("BENE_ID", "washout_cal_end_dt")]
+otl2 <- as.data.table(otl2)
+otl2 <- merge(otl2, cohort_cal_end_date, "BENE_ID")
+otl2 <- otl2[LINE_SRVC_BGN_DT %within% interval(washout_cal_end_dt, 
+                                              washout_cal_end_dt + days(182)), 
+           .(BENE_ID, CLM_ID, LINE_SRVC_BGN_DT, washout_cal_end_dt, NDC, NDC_QTY, 
+             flag_opioid_analgesic, flag_opioid_anesthetics)]
+
+
+# rxl2 <- rxl2[, c("BENE_ID", "RX_FILL_DT", "DAYS_SUPPLY")]
+rxl2 <- as.data.table(rxl2)
+rxl2 <- merge(rxl2, cohort_cal_end_date, "BENE_ID")
+rxl2 <- rxl2[RX_FILL_DT %within% interval(washout_cal_end_dt, 
+                                        washout_cal_end_dt + days(182)), 
+           .(BENE_ID, CLM_ID, RX_FILL_DT, washout_cal_end_dt, NDC, NDC_QTY, DAYS_SUPPLY,
+             flag_opioid_analgesic, flag_opioid_anesthetics)]
+
+```
+
+```{r}
+# otl <- readRDS("/mnt/general-data/disability/mediation_unsafe_pain_mgmt/mediator_otl_opioid_pain_rx.rds")
+# rxl <- readRDS("/mnt/general-data/disability/mediation_unsafe_pain_mgmt/mediator_rxl_opioid_pain_rx.rds")
+
+prop_days_covered <- function(data) {
+    dur <- 0
+    current_int <- data$rx_int[1]
+    for (i in 1:nrow(data)) {
+        check <- intersect(current_int, data$rx_int[i + 1])
+        if (is.na(check)) {
+            # if they don't intersect, add the duration of the first interval
+            dur <- dur + as.duration(current_int)
+            current_int <- data$rx_int[i + 1]
+        } else {
+            # if they do intersect, then update current interval as the union
+            current_int <- union(current_int, data$rx_int[i + 1])
+        }
+    }
+    
+    max(time_length(dur, "days") / 182, 1 / 182)
+}
+
+opioids2 <- otl2 |> 
+    mutate(rx_int = interval(LINE_SRVC_BGN_DT, LINE_SRVC_BGN_DT + days(1)), 
+           rx_int = intersect(rx_int, interval(washout_cal_end_dt, 
+                                               washout_cal_end_dt + days(182)))) |> 
+    select(BENE_ID, rx_int) |> 
+    as_tibble() |> 
+    bind_rows({
+        rxl2 |> 
+            mutate(DAYS_SUPPLY = replace_na(DAYS_SUPPLY, 1), 
+                   rx_int = interval(RX_FILL_DT, RX_FILL_DT + days(DAYS_SUPPLY)), 
+                   rx_int = intersect(rx_int, interval(washout_cal_end_dt, 
+                                                       washout_cal_end_dt + days(182)))) |> 
+            select(BENE_ID, rx_int) |> 
+            as_tibble()
+    })
+
+opioids2 <- group_by(opioids2, BENE_ID) |> 
+    arrange(BENE_ID, int_start(rx_int)) |> 
+    nest()
+
+plan(multisession, workers = 50)
+
+opioids2$mediator_opioid_days_covered <- 
+    foreach(x = opioids2$data,
+            .combine = "c",
+            .options.future = list(chunk.size = 1e4)) %dofuture% {
+                prop_days_covered(x)
+            }
+
+plan(sequential)
+
+opioids <- select(cohort, BENE_ID) |>
+    left_join(select(opioids2, -data)) |>
+    mutate(mediator_opioid_days_covered = replace_na(mediator_opioid_days_covered, 0))
+
+write_rds(opioids3, file.path(save_dir, "mediator_opioid_days_covered.rds"))
+
+opioids3 <- opioids2[, c("BENE_ID", "mediator_opioid_days_covered")]
+opioids <- readRDS(file.path(save_dir, "mediator_opioid_days_covered.rds"))
+```
+
+```{r}
+cohort <- merge(opioids, cohort, all.y = TRUE, by = "BENE_ID")
+
+```
+
+
+
+```{r}
+setDT(cohort)
+my_func <- function(data, which_race, which_year, which_pain_or_disability) {
+  # stopifnot("invalid input for race: must be a number between 1-7 of class character" = 
+  #             which_race %in% c("1","2","3","4","5","6","7"))
+  stopifnot("invalid input for year: must be between 2016-2019" = 
+              which_year %in% c(2016, 2017, 2018, 2019))
+  # stopifnot('invalid input for disability/pain: must be one of "disability", "pain", "both", or "neither"' = 
+  #             which_pain_or_disability %in% c("disability","pain","both","neither"))
+
+  subset <- data[dem_race_cond == which_race &
+    year(washout_start_dt) == which_year &
+    disability_pain_cal == which_pain_or_disability]
+
+  # probability of being prescribed an opioid
+  # print(paste0("Race = ", which_race, "; year = ", which_year, "; pain or disability = ", which_pain_or_disability))
+  # print(paste0("Number of benefactors: ", nrow(subset)))
+
+  # print(paste("Probability of being prescribed an opioid:", sum(subset$opioid_pain_washout_cal)/nrow(subset)))
+
+  num_bene <- nrow(subset)
+
+  # subsetting down to just those who were prescribed an opioid
+  subset <- subset[opioid_pain_washout_cal == 1]
+  # print(head(subset))
+  # print(paste("Average MME:", mean(subset$mediator_max_daily_dose_mme, na.rm=T)))
+
+  # print(paste("Average days covered:", mean(mediator_opioid_days_covered)))
+
+  
+
+  opioid_proba <- round(nrow(subset)/num_bene, 2)
+  # opioid_proba_low <- opioid_proba - round(nrow(subset)/num_bene, 2)
+  # opioid_proba_high <- opioid_proba + round(nrow(subset)/num_bene, 2)
+  
+  average_mme <- round(mean(subset$mediator_max_daily_dose_mme, na.rm=T),2)
+  sd_mme <- round(sd(subset$mediator_max_daily_dose_mme, na.rm=T),2)
+    
+  average_days_covered <- round(mean(subset$mediator_opioid_days_covered, na.rm=T),2)
+  sd_days_covered <- round(sd(subset$mediator_opioid_days_covered, na.rm=T),2)
+  
+  # print(sum(subset$mediator_max_daily_dose_mme == 0))
+  # print(sum(subset$mediator_opioid_days_covered == 0))
+
+  return(c(which_race, 
+           which_year, 
+           which_pain_or_disability,
+           num_bene,
+           opioid_proba,
+           average_mme,
+           sd_mme,
+           average_days_covered,
+           sd_days_covered
+           ))
+}
+
+results <- data.frame()
+
+for (i in c("multi_or_na", 
+            "White, non-Hispanic", 
+            "Black, non-Hispanic", 
+            "Hispanic, all races", 
+            "AIAN_or_HPI",
+            "Asian, non-Hispanic")) {
+  for (j in 2016:2019) {
+    for (k in c("disability only", "chronic pain only", "neither", "disability and chronic pain")){
+      results <- rbind(results, my_func(cohort, i, j, k))
+      
+    }
+  }
+}
+colnames(results) <- c("race_ethnicity",
+                       "year",
+                       "pain_or_disability",
+                       "number_of_benefactors",
+                       "opioid_rx_probability",
+                       "average_mme",
+                       "sd_average_mme",
+                       "average_days_covered",
+                       "sd_days_covered")
+```
+
+
+```{r}
+results[, -c(1,3)] <- lapply(results[, -c(1,3)], as.numeric)
+results
+```
+
+```{r}
+# write_rds(results, file.path(save_dir, "results_df2.rds"))
+results <- readRDS(file.path(save_dir, "results_df2.rds"))
+# write_csv(results, file.path(save_dir, "results_df.csv"))
+```
+
+```{r}
+1	White, non-Hispanic
+2	Black, non-Hispanic
+3	Asian, non-Hispanic
+4	American Indian and Alaska Native (AIAN), non-Hispanic
+5	Hawaiian/Pacific Islander
+6	Multiracial, non-Hispanic
+7	Hispanic, all races
+8	Other, non-Hispanic
+
+race_codes <- data.frame(code = c("1","2","3","4","5","6","7"), race_ethnicity = c("White, non-Hispanic",
+                                                                     "Black, non-Hispanic",
+                                                                     "Asian, non-Hispanic",
+                                                                     "American Indian and Alaska Native (AIAN), non-Hispanic",
+                                                                     "Hawaiian/Pacific Islander",
+                                                                     "Multiracial, non-Hispanic",
+                                                                     "Hispanic, all races"))
+results <- merge.data.table(results, # Merge data.tables
+                            race_codes,
+                            by.x = "race_ethnicity",
+                            by.y = "code")
+
+colnames(results)[c(1,10)] <- c("race_code", "race_ethnicity")
+```
+
+
+# plotting results
+```{r}
+library(ggplot2)
+
+p <- ggplot(results, aes(x = year, y=opioid_rx_probability, color = race_ethnicity)) +
+  geom_point() +
+  geom_line(aes(group = race_ethnicity)) +
+  # geom_smooth()+
+  ggtitle("Probability of being prescribed an opioid, by pain/disability status, race/ethnicity, and year") +
+  ylab("probability") +
+  facet_wrap(~factor(pain_or_disability, levels = c("chronic pain only","disability only","disability and chronic pain","neither")))
+
+p
+# ggsave(file = file.path(save_dir, "opioid_proba.pdf"), width = 10, height = 5)
+```
+
+```{r}
+p <- ggplot(results, aes(x = year, y=average_mme, color = race_ethnicity)) +
+  geom_point() +
+  geom_line(aes(group = race_ethnicity)) +
+  ggtitle("Average MME, by pain/disability status, race/ethnicity, and year") +
+  ylab("MME") +
+  facet_wrap(~factor(pain_or_disability, levels = c("chronic pain only","disability only","disability and chronic pain","neither"))) +
+  geom_errorbar(aes(ymin = average_mme - sd_average_mme/sqrt(number_of_benefactors), 
+                    ymax = average_mme + sd_average_mme/sqrt(number_of_benefactors)),
+                width = 1, position = position_dodge(0))
+p
+# ggsave(file = file.path(save_dir, "average_mme.pdf"), width = 10, height = 5)
+```
+
+```{r}
+p <- ggplot(results, aes(x = year, y=average_days_covered, color = race_ethnicity)) +
+  geom_point() +
+  geom_line(aes(group = race_ethnicity)) +
+  ggtitle("Average proportion of days covered, by pain/disability status, race/ethnicity, and year") +
+  ylab("Proportion days covered") +
+  facet_wrap(~factor(pain_or_disability, levels = c("chronic pain only","disability only","disability and chronic pain","neither"))) +
+  geom_errorbar(aes(ymin = average_days_covered - sd_days_covered/sqrt(number_of_benefactors), 
+                    ymax = average_days_covered + sd_days_covered/sqrt(number_of_benefactors)),
+                width = 1, position = position_dodge(0))
+p
+# ggsave(file = file.path(save_dir, "average_days_covered.pdf"), width = 10, height = 5)
+```
+
+
+
+```{r}
+library(arrow)
+library(data.table)
+library(dplyr)
+
+
+src_root <- "/mnt/processed-data/disability"
+drv_root <- "/mnt/general-data/disability/mediation_unsafe_pain_mgmt"
+
+files <- paste0(list.files(src_root, pattern = "TAFOTL", recursive = TRUE))
+
+parquet_files <- grep("\\.parquet$", files, value = TRUE)
+
+otl <- open_dataset(file.path("/mnt/processed-data/disability", parquet_files))
+
+otl_vars <- c("BENE_ID", "CLM_ID", "LINE_SRVC_BGN_DT", "LINE_SRVC_END_DT", "NDC", "NDC_QTY")
+op <- readRDS(file.path(drv_root, "mediation_unsafe_pain_mgmt_opioid_pain_ndc.rds"))
+
+otl <- select(otl, all_of(otl_vars)) |> 
+    filter(NDC %in% op$NDC) |>
+    collect() |> 
+    as.data.table()
+
+```
+
+```{r}
+tmp <- readRDS("/mnt/general-data/disability/mediation_unsafe_pain_mgmt/otl_opioids_pain_mme.rds")
+```
+
+```{r}
+length(setdiff(otl$BENE_ID, tmp$BENE_ID))
+
+```
+
+```{r}
+out <- readRDS(file.path(save_dir, "mediator_monthly_dose_mme.rds"))
+```
+
+
+```{r}
+data_dir <- "/mnt/general-data/disability/mediation_unsafe_pain_mgmt"
+proj_dir <- "projects/mediation_unsafe_pain_mgmt"
+
+# Read in cohort and dates
+# analysis <- readRDS("/mnt/general-data/disability/create_cohort/final/analysis_cohort.rds")
+setDT(analysis)
+analysis <- analysis[, .(BENE_ID, washout_cal_end_dt)]
+setkey(analysis, BENE_ID)
+
+all_opioids_clean <- readRDS(file.path(data_dir, "all_pain_opioids.rds"))
+setDT(all_opioids_clean)
+setkey(all_opioids_clean, BENE_ID)
+all_opioids_clean <- all_opioids_clean[, .(BENE_ID, NDC, opioid, mme_strength_per_day, rx_start_dt, rx_end_dt)]
+
+all_opioids_clean_merged <- merge(all_opioids_clean, analysis, by = "BENE_ID")
+
+all_opioids_clean_merged2 <- merge(all_opioids_clean, cohort, by = "BENE_ID")
+
+```
+
+```{r}
+tmp <- readRDS("/mnt/general-data/disability/mediation_unsafe_pain_mgmt/mediator_max_daily_dose_mme.rds")
+tmp <- merge(tmp, cohort, by = "BENE_ID")
+
+```
+
+
+
+
+
+```{r}
+
+tmp <- readRDS("/mnt/general-data/disability/create_cohort/intermediate/tafdedts/nest_dts.rds")
+```
+
+
+```{r}
+tmp2 <- readRDS("/mnt/general-data/disability/create_cohort/intermediate/tafdedts/dts_query.rds")
+```
+
