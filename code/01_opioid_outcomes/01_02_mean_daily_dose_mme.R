@@ -30,7 +30,7 @@ save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
 # Read in cohort and dates
 dts_cohorts <- readRDS("/mnt/general-data/disability/create_cohort/final/desc_cohort.rds")
 setDT(dts_cohorts)
-dts_cohorts <- dts_cohorts[, .(BENE_ID, washout_cal_end_dt)]
+dts_cohorts <- dts_cohorts[opioid_pain_washout_12mos_cal == 1, .(BENE_ID, washout_cal_end_dt)]
 setkey(dts_cohorts, BENE_ID)
 
 all_opioids_clean <- readRDS(file.path(save_dir, "all_pain_opioids.rds"))
@@ -94,4 +94,4 @@ mean_daily_dose[, mediator_mean_daily_dose_mme := fifelse(is.na(mediator_mean_da
 
 # Save final dataset -----------------------------------------------------------
 
-saveRDS(mean_daily_dose, file.path(save_dir, "mediator_mean_daily_dose_mme.rds"))
+saveRDS(mean_daily_dose, file.path(save_dir, "trends_mean_daily_dose_mme.rds"))
