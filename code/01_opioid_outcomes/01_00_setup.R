@@ -16,7 +16,7 @@ library(doFuture)
 
 load_dir <- "/mnt/general-data/disability/create_cohort/"
 
-cohort <- readRDS(paste0(load_dir, "final/analysis_cohort.rds"))
+cohort <- readRDS(paste0(load_dir, "final/desc_cohort.rds"))
 setDT(cohort)
 
 cohort <- cohort[, c("BENE_ID",

@@ -7,6 +7,7 @@
 
 library(data.table)
 library(ggplot2)
+library(dplyr)
 
 load_dir <- "/mnt/general-data/disability/create_cohort/final"
 save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
@@ -21,6 +22,9 @@ cohort <- cohort[, c("BENE_ID",
                      "disability_pain_12mos_cal",
                      "opioid_pain_washout_12mos_cal"
 )]
+
+cohort <- cohort |>
+  mutate(race_ethnicity = ifelse(dem_race == "American Indian and Alaska Native (AIAN), non-Hispanic", "AIAN, non-Hispanic", dem_race))
 
 
 MME <- readRDS(file.path(save_dir, "trends_mean_daily_dose_mme.rds"))
@@ -93,7 +97,7 @@ for (i in c("multi_or_na",
   }
 }
 
-colnames(results) <- c("race_ethnicity",
+colnames(results) <- c("trace_ethnicity",
                        "year",
                        "pain_or_disability",
                        "number_of_beneficiaries",
