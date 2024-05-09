@@ -6,7 +6,7 @@ How does the trend of the administration of opioid and non-opioid treatments cha
 
 ## Cohort definition:
 
-Using Kat Hoffmans cohort, <a href="https://github.com/CI-NYC/disability/blob/4a9cb21be99b54a53f6716281277a6821ca7352b/projects/create_cohort/scripts/07_combine_cohort/merge_final_cohort.R#L287">desc_cohort.rds<\a> (exclusions already applied), beneficiaries were separated into four cohorts, one for each year. 
+Using Kat Hoffmans cohort, <a href="https://github.com/CI-NYC/disability/blob/4a9cb21be99b54a53f6716281277a6821ca7352b/projects/create_cohort/scripts/07_combine_cohort/merge_final_cohort.R#L287">desc_cohort.rds</a> (exclusions already applied), beneficiaries were separated into four cohorts, one for each year. 
 
 Eligibility for each of the four cohorts:
 - continuous enrollment for a 6-month washout period, where the entirety of the 6-month follow-up period must be contained within the given year.
