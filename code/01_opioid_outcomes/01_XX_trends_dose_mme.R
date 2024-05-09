@@ -12,14 +12,12 @@ library(arrow)
 library(lubridate)
 library(data.table)
 
-# data_dir <- "/mnt/general-data/disability/mediation_unsafe_pain_mgmt"
+data_dir <- "/mnt/general-data/disability/mediation_unsafe_pain_mgmt"
 save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
 
-dts_cohorts <- read_rds("/mnt/general-data/disability/create_cohort/final/desc_cohort.rds") |> 
-  select(BENE_ID, washout_start_dt)
+rxl_opioids <- readRDS(file.path(data_dir, "rxl_opioids_pain_mme.rds"))
+otl_opioids <- readRDS(file.path(data_dir, "otl_opioids_pain_mme.rds"))
 
-rxl_opioids <- read_rds(file.path(save_dir, "rxl_opioids_pain_mme.rds"))
-otl_opioids <- read_rds(file.path(save_dir, "otl_opioids_pain_mme.rds"))
 
 # calculate strength per day in Milligram Morphine Equivalent (MME) units
 # no caps on number of pills, days supply, and pills per day
@@ -76,9 +74,17 @@ otl_opioids <-
   mutate(rx_end_dt = rx_start_dt + 1) |> # 1 day supply assumption
   arrange(BENE_ID, rx_start_dt, opioid)
 
-# combine the two datasets
-all_opioids_clean <- full_join(otl_opioids, rxl_opioids) |>
-  left_join(dts_cohorts)
 
-# save raw data set of all opioids for pain
-saveRDS(all_opioids_clean, file.path(save_dir, "all_pain_opioids.rds"))
+# for (my_year in 2016:2016) {
+#   
+#   dts_cohorts <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"full.rds")))
+#   
+#   # combine the two datasets
+#   all_opioids_clean <- full_join(otl_opioids, rxl_opioids) |>
+#     left_join(dts_cohorts) |>
+#     filter(rx_start_dt %within% interval(followup_start_dt, followup_end_dt))
+#   
+#   # save raw data set of all opioids for pain
+#   saveRDS(all_opioids_clean, file.path(save_dir, my_year, paste0(my_year, "pain_opioids.rds")))
+# 
+# }
