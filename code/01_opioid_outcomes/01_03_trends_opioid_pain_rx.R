@@ -16,7 +16,7 @@ drv_root <- "/mnt/general-data/disability/mediation_unsafe_pain_mgmt"
 save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
 
 
-for (my_year in 2017:2019) {
+for (my_year in 2016:2019) {
   dts_cohorts <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_full.rds")))
   setDT(dts_cohorts)
   setkey(dts_cohorts, BENE_ID)

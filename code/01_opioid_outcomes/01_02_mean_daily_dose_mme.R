@@ -44,7 +44,7 @@ all_opioids_clean <- all_opioids_clean[, .(BENE_ID, NDC, opioid, mme_strength_pe
 
 
 # repeat daily mean mme calculations for each year
-for (my_year in 2016:2019) {
+for (my_year in 2017:2019) {
 
   dts_cohorts <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_full.rds")))
   setDT(dts_cohorts)
@@ -84,7 +84,9 @@ for (my_year in 2016:2019) {
     ][, .(mediator_mean_daily_dose_mme = mean(total_mme_strength))]
   }
   
-  plan(multisession, workers = 50)
+  tic()
+  
+  plan(multisession, workers = 10)
   
   # Apply function
   out <- foreach(data = opioids$data, 
@@ -98,6 +100,8 @@ for (my_year in 2016:2019) {
                  }
   
   plan(sequential)
+  
+  toc()
   
   # Right join with cohort
   mean_daily_dose <- merge(out, dts_cohorts[, .(BENE_ID)], all.y = TRUE, by = "BENE_ID")

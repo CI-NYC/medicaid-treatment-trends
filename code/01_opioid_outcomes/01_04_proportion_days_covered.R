@@ -19,8 +19,8 @@ save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
 for (my_year in 2016:2019) {
   
   dts_cohorts <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_full.rds")))
-  setDT(dts_cohorts)
-  setkey(dts_cohorts, BENE_ID)
+  # setDT(dts_cohorts)
+  # setkey(dts_cohorts, BENE_ID)
   
   otl <- readRDS(file.path(save_dir, my_year, paste0(my_year,"_otl_opioid_pain_rx.rds")))
   rxl <- readRDS(file.path(save_dir, my_year, paste0(my_year,"_rxl_opioid_pain_rx.rds")))
@@ -63,12 +63,12 @@ for (my_year in 2016:2019) {
     arrange(BENE_ID, int_start(rx_int)) |> 
     nest()
   
-  plan(multisession, workers = 50)
+  plan(multisession, workers = 10)
   
   opioids$mediator_opioid_days_covered <- 
     foreach(x = opioids$data, 
             .combine = "c",
-            .options.future = list(chunk.size = 1e4)) %dofuture% {
+            .options.future = list(chunk = 1e4)) %dofuture% {
               prop_days_covered(x)
             }
   
