@@ -46,7 +46,7 @@ There are 4 "cohorts". Eligiblity criteria explained below:
     - physical disability alone 
     - neither
       
-    - Code for defining the 4 groups for pain and disability mentioned above is found <a href="[https://github.com/CI-NYC/disability-chronic-pain/blob/93bbeb9d2edff361bf622a9889c7e1d811f0f238/scripts/04_define_comorbidity_vars/define_chronic_pain.R#L5](https://github.com/CI-NYC/disability-chronic-pain/blob/93bbeb9d2edff361bf622a9889c7e1d811f0f238/scripts/07_combine_cohort/merge_final_cohort.R#L103-L106)">here</a>. This requires two components, i) chronic pain, and ii) physical disability. Explanations for where to find code that defines them in the table below:
+    - Code for defining the 4 groups for pain and disability mentioned above is found <a href="https://github.com/CI-NYC/disability-chronic-pain/blob/93bbeb9d2edff361bf622a9889c7e1d811f0f238/scripts/07_combine_cohort/merge_final_cohort.R#L103-L106">here</a>. This requires two components, i) chronic pain, and ii) physical disability. Explanations for where to find code that defines them in the table below:
 
 Definitions for chronic pain and physical disability are included in the following table
 
