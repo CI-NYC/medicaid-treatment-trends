@@ -53,7 +53,7 @@ Definitions for chronic pain and physical disability are included in the followi
 | Variable | Definition |
 |---|---|
 | Physical disability | Code for defining physical disability is found <a href="https://github.com/CI-NYC/disability-chronic-pain/blob/93bbeb9d2edff361bf622a9889c7e1d811f0f238/scripts/02_clean_tafdebse.R#L341-L347">here</a>. I will need to adjust the date period I search within. |
-| Chornic pain | Code for defining chronic pain is found <a href="https://github.com/CI-NYC/disability-chronic-pain/blob/93bbeb9d2edff361bf622a9889c7e1d811f0f238/scripts/04_define_comorbidity_vars/define_chronic_pain.R#L5">here</a>. Original script searches over 18 rolling 6-month windows (from month 0 to month 17). My modified code will only need to search within months 7-12 (the follow-up period), and thus, does not require rolling windows. |
+| Chronic pain | Code for defining chronic pain is found <a href="https://github.com/CI-NYC/disability-chronic-pain/blob/93bbeb9d2edff361bf622a9889c7e1d811f0f238/scripts/04_define_comorbidity_vars/define_chronic_pain.R#L5">here</a>. Original script searches over 18 rolling 6-month windows (from month 0 to month 17). My modified code will only need to search within months 7-12 (the follow-up period), and thus, does not require rolling windows. |
 |  |  |
 
 6. For each race-year-pain/disability group:
@@ -68,8 +68,8 @@ Find definitions for computations in the following table
 
 | Variable | Definition |
 |---|---|
-| MME | defined <a href="https://github.com/CI-NYC/disability/blob/6e79d09036ee743c6be5c989812d18d3ae9e5e0c/projects/mediation_unsafe_pain_mgmt/01_create_mediators/11_mediator_dose_mme.R">here</a> |
-| Days covered |  |
+| MME | MME dose conversion is defined <a href="https://github.com/CI-NYC/disability/blob/6e79d09036ee743c6be5c989812d18d3ae9e5e0c/projects/mediation_unsafe_pain_mgmt/01_create_mediators/11_mediator_dose_mme.R">here</a> <p> mean daily dose of MME is calculated <a href="https://github.com/CI-NYC/disability/blob/4a9cb21be99b54a53f6716281277a6821ca7352b/projects/mediation_unsafe_pain_mgmt/01_create_mediators/15_mediator_max_daily_dose_mme.R">here</a> using the function "calculate_mean_daily_dose". <p> Modifications will need to be made to find the "mean" MME instead of "max" |
+| Days covered | Defined <a href="https://github.com/CI-NYC/disability/blob/4a9cb21be99b54a53f6716281277a6821ca7352b/projects/mediation_unsafe_pain_mgmt/01_create_mediators/31_mediator_proportion_days_covered.R">here</a> <p> only adjustments to the date period will need to be made|
 
 
 8. Addendum: additional outcomes for non-opioid treatments will be measured. These include:
