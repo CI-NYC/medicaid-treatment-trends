@@ -73,11 +73,11 @@ Find definitions for computations in the following table
 
 
 8. Addendum: additional outcomes for non-opioid treatments will be measured. These include:
-- Counseling
-- Physical therapy
-- Chiropractic work
-- Acupuncture
-- Non-opioid medication
+- <a href="https://github.com/CI-NYC/disability/blob/4a9cb21be99b54a53f6716281277a6821ca7352b/projects/mediation_unsafe_pain_mgmt/01_create_mediators/23_mediator_counseling.R">Counseling</a> 
+- <a href="https://github.com/CI-NYC/disability/blob/4a9cb21be99b54a53f6716281277a6821ca7352b/projects/mediation_unsafe_pain_mgmt/01_create_mediators/29_mediator_physical_therapy.R">Physical therapy</a>
+- <a href="https://github.com/CI-NYC/disability/blob/4a9cb21be99b54a53f6716281277a6821ca7352b/projects/mediation_unsafe_pain_mgmt/01_create_mediators/22_mediator_chiropractic.R">Chiropractic work</a>
+- <a href="https://github.com/CI-NYC/disability/blob/4a9cb21be99b54a53f6716281277a6821ca7352b/projects/mediation_unsafe_pain_mgmt/01_create_mediators/19_mediator_acupuncture.R">Acupuncture</a>
+- <a href="https://github.com/CI-NYC/disability/blob/4a9cb21be99b54a53f6716281277a6821ca7352b/projects/mediation_unsafe_pain_mgmt/01_create_mediators/03_mediator_nonopioid_pain_rx.R">Non-opioid medication</a>
 
 9. Like before, for every strata, we need to find the proportion of beneficiaries who received each of the non-opioid treatments.
 
