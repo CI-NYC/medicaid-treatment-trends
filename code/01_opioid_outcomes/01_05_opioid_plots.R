@@ -1,6 +1,6 @@
 # -------------------------------------
-# Script:
-# Author:
+# Script: opioid_plots
+# Author: Anton Hung 2024-05-16
 # Purpose:
 # Notes:
 # -------------------------------------
@@ -8,50 +8,79 @@
 library(data.table)
 library(ggplot2)
 library(dplyr)
+library(arrow)
+library(lubridate)
 
-load_dir <- "/mnt/general-data/disability/create_cohort/final"
 save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
-result_dir <- "/home/amh2389/medicaid/medicaid_treatment_trends/output"
-cohort <- readRDS(file.path(load_dir, "desc_cohort.rds"))
+result_dir <- "~/medicaid/medicaid_treatment_trends/output"
+
+race <- readRDS("/mnt/general-data/disability/create_cohort/final/desc_cohort.rds") |>
+  select(BENE_ID, dem_race_cond)
+
+# dems <- open_dataset("/mnt/general-data/disability/create_cohort/intermediate/tafdebse/dem_df.parquet")
+# dems <-
+#   dems |> 
+#   select(all_of(names(dems)))  |>
+#   collect()
+
+# Merging variables to each cohort
+merge_cohort <- function(my_year){
+  cohort <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_full.rds")))
+  disability_or_pain <- readRDS(file.path(save_dir, my_year, paste0(my_year, "_cohort_disability_or_pain.rds")))
+  mme <- readRDS(file.path(save_dir, my_year, paste0(my_year, "_mean_daily_dose_mme.rds")))
+  proportion_days_covered <- readRDS(file.path(save_dir, my_year, paste0(my_year, "_proportion_days_covered.rds")))
+  out <- cohort |>
+    left_join(disability_or_pain) |>
+    left_join(race) |>
+    left_join(mme) |>
+    left_join(proportion_days_covered) |>
+    mutate(year = my_year) |>
+    select(BENE_ID, year, disability_pain_cal, dem_race_cond, mediator_mean_daily_dose_mme, mediator_opioid_days_covered)
+}
+
+cohort <- rbind(merge_cohort(2016),
+                merge_cohort(2017),
+                merge_cohort(2018),
+                merge_cohort(2019))
 setDT(cohort)
 
-cohort <- cohort[, c("BENE_ID",
-                     "washout_start_dt",
-                     "washout_12mos_end_dt",
-                     "dem_race_cond",
-                     "disability_pain_12mos_cal",
-                     "opioid_pain_washout_12mos_cal"
-)]
+# cohort <- cohort[, c("BENE_ID",
+#                      "washout_start_dt",
+#                      "washout_12mos_end_dt",
+#                      "dem_race_cond",
+#                      "disability_pain_12mos_cal",
+#                      "opioid_pain_washout_12mos_cal"
+# )]
 
-cohort <- cohort |>
-  mutate(race_ethnicity = ifelse(dem_race == "American Indian and Alaska Native (AIAN), non-Hispanic", "AIAN, non-Hispanic", dem_race))
+# cohort <- cohort |>
+#   mutate(race_ethnicity = ifelse(dem_race == "American Indian and Alaska Native (AIAN), non-Hispanic", "AIAN, non-Hispanic", dem_race))
 
 
-MME <- readRDS(file.path(save_dir, "trends_mean_daily_dose_mme.rds"))
-days_covered <- readRDS(file.path(save_dir, "trends_proportion_days_covered.rds"))
+# MME <- readRDS(file.path(save_dir, "trends_mean_daily_dose_mme.rds"))
+# days_covered <- readRDS(file.path(save_dir, "trends_proportion_days_covered.rds"))
 
 
 
 # Merge MME with the cohort
-cohort <- merge(MME, cohort, all.y = TRUE, by = "BENE_ID")
+# cohort <- merge(MME, cohort, all.y = TRUE, by = "BENE_ID")
 
 # Convert NAs to 0 for observations in the cohort that didn't have a claim
-cohort[, mediator_mean_daily_dose_mme := fifelse(is.na(mediator_mean_daily_dose_mme), 0, mediator_mean_daily_dose_mme)]
+# cohort[, mediator_mean_daily_dose_mme := fifelse(is.na(mediator_mean_daily_dose_mme), 0, mediator_mean_daily_dose_mme)]
 
 
 # Merge days covered with the cohort
-cohort <- merge(days_covered, cohort, all.y = TRUE, by = "BENE_ID")
-setDT(cohort)
+# cohort <- merge(days_covered, cohort, all.y = TRUE, by = "BENE_ID")
+# setDT(cohort)
 
 # Convert NAs to 0 for observations in the cohort that didn't have a claim
-cohort[, mediator_opioid_days_covered := fifelse(is.na(mediator_opioid_days_covered), 0, mediator_opioid_days_covered)]
+# cohort[, mediator_opioid_days_covered := fifelse(is.na(mediator_opioid_days_covered), 0, mediator_opioid_days_covered)]
 
 
 ### Computing Results:
 my_func <- function(data, which_race, which_year, which_pain_or_disability) {
   subset <- data[dem_race_cond == which_race &
-                   year(washout_start_dt) == which_year &
-                   disability_pain_12mos_cal == which_pain_or_disability]
+                   year == which_year &
+                   disability_pain_cal == which_pain_or_disability]
   
   num_bene <- nrow(subset)
   
@@ -97,7 +126,7 @@ for (i in c("multi_or_na",
   }
 }
 
-colnames(results) <- c("trace_ethnicity",
+colnames(results) <- c("race_ethnicity",
                        "year",
                        "pain_or_disability",
                        "number_of_beneficiaries",
@@ -129,8 +158,8 @@ ggsave(file = file.path(result_dir, "opioid_prop.pdf"), width = 10, height = 7)
 p <- ggplot(results, aes(x = year, y=average_mme, color = race_ethnicity)) +
   geom_jitter(position=position_dodge(0.2)) +
   geom_line(aes(group = race_ethnicity), position=position_dodge(0.2)) +
-  ggtitle("Average MME per month, by pain/disability status, race/ethnicity, and year") +
-  ylab("MME per month") +
+  ggtitle("Average daily MME, by pain/disability status, race/ethnicity, and year") +
+  ylab("MME per day") +
   facet_wrap(~factor(pain_or_disability, levels = c("chronic pain only","disability only","disability and chronic pain","neither"))) +
   geom_errorbar(aes(ymin = average_mme - 1.96*se_mme, 
                     ymax = average_mme + 1.96*se_mme),
@@ -143,7 +172,7 @@ ggsave(file = file.path(result_dir, "average_mme.pdf"), width = 10, height = 7)
 p <- ggplot(results, aes(x = year, y=average_days_covered, color = race_ethnicity)) +
   geom_jitter(position=position_dodge(0.2)) +
   geom_line(aes(group = race_ethnicity), position=position_dodge(0.2)) +
-  ggtitle("Average proportion of days covered over 12-month span, by pain/disability status, race/ethnicity, and year") +
+  ggtitle("Average proportion of days covered for opioids, by pain/disability status, race/ethnicity, and year") +
   ylab("Proportion days covered") +
   facet_wrap(~factor(pain_or_disability, levels = c("chronic pain only","disability only","disability and chronic pain","neither"))) +
   geom_errorbar(aes(ymin = average_days_covered - 1.96*se_days_covered, 
