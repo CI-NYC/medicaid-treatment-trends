@@ -6,8 +6,10 @@ How does the trend of the administration of opioid and non-opioid treatments cha
 
 ## Cohort definition:
 
-Using Kat Hoffmans cohort, <a href="https://github.com/CI-NYC/disability/blob/4a9cb21be99b54a53f6716281277a6821ca7352b/projects/create_cohort/scripts/07_combine_cohort/merge_final_cohort.R#L287">desc_cohort.rds</a> (exclusions already applied), beneficiaries were separated into four cohorts, one for each year. 
+Starting with Kat Hoffman's cohort, <a href="https://github.com/CI-NYC/disability/blob/4a9cb21be99b54a53f6716281277a6821ca7352b/projects/create_cohort/scripts/07_combine_cohort/merge_final_cohort.R#L287">desc_cohort.rds</a> (exclusions already applied).
 
+## Stratifying by year:
+For every beneficiary in the cohort, we want to follow them for every year that they are continuously enrolled. This means that 
 Washout period: Beneficiaries are required to be continuously enrolled for a 6-month washout period.
 
 Follow-up period: Beneficiaries will be followed for 6 months directly after washout. All strata/exposures and outcomes are measured within this follow-up period.
@@ -19,17 +21,19 @@ There are 4 "cohorts". Eligiblity criteria explained below:
 
 ## Procedure
 
-1. Starting with the cohort used in the total effects paper (first author, Kat Hoffman). Except, ignoring the exclusion criteria that excludes those with an enrollment date of Jan 1 2016. This cohort has ~ 13.5 million people.
+1. Starting with the cohort used in the total effects paper (first author, Kat Hoffman). Except, ignoring the exclusion criteria that excludes those with an enrollment date of Jan 1 2016. This cohort has ~ 13.5 million people. We will stratify the cohort based on 3 variables: year, race/ethnicity, pain/disability.
 
-2. Individuals in this original cohort will need to be assigned to one or more of the 4 year-cohorts defined above. They will be assigned on the basis of whether they meet the continuous enrollment criteria for a given year.
+2. Explanation for the `year` variable: Individuals in the original cohort will be followed for every year that they are continuously enrolled. This means that they may be assigned to multiple stratum if they are eligible for multiple years.
 
-3. An additional exclusion criteria: for all years, beneficiaries from the state of Rhode Island need to be excluded. Also, for the years 2017-2018, beneficiaries from Michigan need to be excluded.
+3. Beneficiaries will be followed over 6-month periods. To be included in a particular year, the 6-month follow-up period must fall entirely within that year. For eligibility in a given year, beneficiaries needed to be continuously enrolled in Medicaid for at least 6 months before the start of follow-up. 
 
-4. For each year, cohorts will also need to be stratified into many groups based on:
+4. An additional exclusion criteria: for all years, beneficiaries from the state of Rhode Island need to be excluded. Also, for the years 2017-2018, beneficiaries from Michigan need to be excluded.
+
+5. For each year, cohorts will also need to be stratified into many groups based on:
     1. race/ethnicity
     2. chronic pain or physical disability
 
-5. To subset the cohorts:
+6. To subset the cohorts:
     1. Race and ethnicity has been recorded in the variable `dem_race_cond` and has 6 levels:
        AIAN_or_HPI (stands for American Indian, Alaska Native, Hawaiian or Pacific Islander),
        Asian, non-Hispanic,
@@ -38,14 +42,14 @@ There are 4 "cohorts". Eligiblity criteria explained below:
        multi_or_na,
        White, non-hispanic.
        
-    2. Year can take on any value from 2016-2019. Beneficiaries are eligible to be included in a given year if they have a 6-month followup period contained entirely within the year, which is defined by being continuously enrolled for a 6-month washout period directly before the follow-up period.
+    2. Year can take on any value from 2016-2019. Beneficiaries are eligible to be included in a given year if they have a 6-month follow-up period contained entirely within the year, which is defined by being continuously enrolled for a 6-month washout period directly before the follow-up period.
 
-    3. Chronic pain and physical disability groups are determined based on whether a beneficiary has:
+    3. Beneficiaries' physical disability or chronic pain status will be assessed within this 6-month continuous enrollment period prior to each follow-up period. Chronic pain and physical disability groups are determined based on whether a beneficiary has:
     - both chronic pain and physical disability
     - chronic pain alone
     - physical disability alone 
     - neither
-      
+  
     - Code for defining the 4 groups for pain and disability is found <a href="https://github.com/CI-NYC/disability-chronic-pain/blob/93bbeb9d2edff361bf622a9889c7e1d811f0f238/scripts/07_combine_cohort/merge_final_cohort.R#L103-L106">here</a>. This requires two components, i) chronic pain, and ii) physical disability. Explanations for where to find code that defines them in the table below:
 
 Definitions for chronic pain and physical disability are included in the following table
@@ -61,7 +65,7 @@ Definitions for chronic pain and physical disability are included in the followi
 7. For each race-year-pain/disability group AND among only those who were prescribed an opioid:
     1. Estimate the daily average MME
 
-    2. among those prescribed an opioid, estimate the average days covered for an opioid during the 6-month follow-up period
+    2. estimate the average days covered for an opioid during the 6-month follow-up period
 
 Find definitions for computations in the following table
 
