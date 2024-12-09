@@ -44,9 +44,10 @@ all_opioids_clean <- all_opioids_clean[, .(BENE_ID, NDC, opioid, mme_strength_pe
 
 
 # repeat daily mean mme calculations for each year
-for (my_year in 2017:2019) {
+for (my_year in 2016:2019) {
 
   dts_cohorts <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_full.rds")))
+  # dts_cohorts <- dts_cohorts[1:100,]
   setDT(dts_cohorts)
   setkey(dts_cohorts, BENE_ID)
 
@@ -76,7 +77,7 @@ for (my_year in 2017:2019) {
     # Calculate the date limit based on washout_cal_end_dt + 182 days
     washout_date_limit <- to_modify$followup_end_dt
     
-    long <- to_modify[, .(date = seq(rx_start_dt, rx_end_dt, by = "1 day"), 
+    long <- to_modify[, .(date = seq(rx_start_dt, rx_end_dt -1, by = "1 day"), 
                           NDC, opioid, mme_strength_per_day), by = .(seq_len(nrow(data)))
     ][date <= washout_date_limit, ]  # Filter rows based on date limit
     
@@ -86,7 +87,7 @@ for (my_year in 2017:2019) {
   
   tic()
   
-  plan(multisession, workers = 10)
+  plan(multisession, workers = 8)
   
   # Apply function
   out <- foreach(data = opioids$data, 
@@ -100,7 +101,8 @@ for (my_year in 2017:2019) {
                  }
   
   plan(sequential)
-  
+  out <- out |>
+    mutate(mediator_mean_daily_dose_mme = pmin(mediator_mean_daily_dose_mme, quantile(mediator_mean_daily_dose_mme,0.99)))
   toc()
   
   # Right join with cohort

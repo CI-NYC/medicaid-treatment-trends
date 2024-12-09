@@ -121,32 +121,38 @@ results[, -c(1,3)] <- lapply(results[, -c(1,3)], as.numeric)
 
 write.csv(results, file.path(result_dir, "additional_outcomes_results.csv"))
 
+results <- read.csv(file.path(result_dir, "additional_outcomes_results.csv"))
+
 p <- ggplot(results, aes(x = year, y=counselling_prop, color = race_ethnicity)) +
   geom_jitter(position=position_dodge(0.2)) +
   geom_line(aes(group = race_ethnicity), position=position_dodge(0.2)) +
   # geom_smooth()+
-  ggtitle("Proportion of beneficiaries receiving counseling, by pain/disability status, race/ethnicity, and year") +
+  ggtitle("Proportion of beneficiaries receiving counseling") +
   ylab("proportion") +
   facet_wrap(~factor(pain_or_disability, levels = c("chronic pain only","disability only","disability and chronic pain","neither"))) +
   geom_errorbar(aes(ymin = counselling_prop - 1.96*counselling_se, 
                     ymax = counselling_prop + 1.96*counselling_se),
-                width = 1, position = position_dodge(0.2))
+                width = 1, position = position_dodge(0.2)) +
+  labs(color = 'Race and Ethnicity') +
+  theme_classic()
 p
-ggsave(file = file.path(result_dir, "counselling_prop.pdf"), width = 10, height = 7)
+ggsave(file = file.path(result_dir, "counselling_prop.pdf"), width = 8, height = 6)
 
 
 p <- ggplot(results, aes(x = year, y=physical_therapy_prop, color = race_ethnicity)) +
   geom_jitter(position=position_dodge(0.2)) +
   geom_line(aes(group = race_ethnicity), position=position_dodge(0.2)) +
   # geom_smooth()+
-  ggtitle("Proportion of beneficiaries receiving physical therapy, by pain/disability status, race/ethnicity, and year") +
+  ggtitle("Proportion of beneficiaries receiving physical therapy") +
   ylab("proportion") +
   facet_wrap(~factor(pain_or_disability, levels = c("chronic pain only","disability only","disability and chronic pain","neither"))) +
   geom_errorbar(aes(ymin = physical_therapy_prop - 1.96*physical_therapy_se, 
                     ymax = physical_therapy_prop + 1.96*physical_therapy_se),
-                width = 1, position = position_dodge(0.2))
+                width = 1, position = position_dodge(0.2)) +
+  labs(color = 'Race and Ethnicity') +
+  theme_classic()
 p
-ggsave(file = file.path(result_dir, "physical_therapy_prop.pdf"), width = 10, height = 7)
+ggsave(file = file.path(result_dir, "physical_therapy_prop.pdf"), width = 8, height = 6)
 
 
 
@@ -154,14 +160,16 @@ p <- ggplot(results, aes(x = year, y=acupuncture_prop, color = race_ethnicity)) 
   geom_jitter(position=position_dodge(0.2)) +
   geom_line(aes(group = race_ethnicity), position=position_dodge(0.2)) +
   # geom_smooth()+
-  ggtitle("Proportion of beneficiaries receiving acupuncture, by pain/disability status, race/ethnicity, and year") +
+  ggtitle("Proportion of beneficiaries receiving acupuncture") +
   ylab("proportion") +
   facet_wrap(~factor(pain_or_disability, levels = c("chronic pain only","disability only","disability and chronic pain","neither"))) +
   geom_errorbar(aes(ymin = pmax(acupuncture_prop - 1.96*acupuncture_se, 0), 
                     ymax = acupuncture_prop + 1.96*acupuncture_se),
-                width = 1, position = position_dodge(0.2))
+                width = 1, position = position_dodge(0.2)) +
+  labs(color = 'Race and Ethnicity') +
+  theme_classic()
 p
-ggsave(file = file.path(result_dir, "acupuncture_prop.pdf"), width = 10, height = 7)
+ggsave(file = file.path(result_dir, "acupuncture_prop.pdf"), width = 8, height = 6)
 
 
 
@@ -169,14 +177,16 @@ p <- ggplot(results, aes(x = year, y=chiropractic_prop, color = race_ethnicity))
   geom_jitter(position=position_dodge(0.2)) +
   geom_line(aes(group = race_ethnicity), position=position_dodge(0.2)) +
   # geom_smooth()+
-  ggtitle("Proportion of beneficiaries receiving chiropractic work, by pain/disability status, race/ethnicity, and year") +
+  ggtitle("Proportion of beneficiaries receiving chiropractic work") +
   ylab("proportion") +
   facet_wrap(~factor(pain_or_disability, levels = c("chronic pain only","disability only","disability and chronic pain","neither"))) +
   geom_errorbar(aes(ymin = pmax(chiropractic_prop - 1.96*chiropractic_se, 0), 
                     ymax = chiropractic_prop + 1.96*chiropractic_se),
-                width = 1, position = position_dodge(0.2))
+                width = 1, position = position_dodge(0.2)) +
+  labs(color = 'Race and Ethnicity') +
+  theme_classic()
 p
-ggsave(file = file.path(result_dir, "chiropractic_prop.pdf"), width = 10, height = 7)
+ggsave(file = file.path(result_dir, "chiropractic_prop.pdf"), width = 8, height = 6)
 
 
 
@@ -185,14 +195,16 @@ p <- ggplot(results, aes(x = year, y=nonopioid_pain_prop, color = race_ethnicity
   geom_jitter(position=position_dodge(0.2)) +
   geom_line(aes(group = race_ethnicity), position=position_dodge(0.2)) +
   # geom_smooth()+
-  ggtitle("Proportion of beneficiaries receiving non-opioid pain medication, by pain/disability status, race/ethnicity, and year") +
+  ggtitle("Proportion of beneficiaries receiving non-opioid pain medication") +
   ylab("proportion") +
   facet_wrap(~factor(pain_or_disability, levels = c("chronic pain only","disability only","disability and chronic pain","neither"))) +
   geom_errorbar(aes(ymin = pmax(nonopioid_pain_prop - 1.96*nonopioid_pain_se, 0), 
                     ymax = nonopioid_pain_prop + 1.96*nonopioid_pain_se),
-                width = 1, position = position_dodge(0.2))
+                width = 1, position = position_dodge(0.2)) +
+  labs(color = 'Race and Ethnicity') +
+  theme_classic()
 p
-ggsave(file = file.path(result_dir, "nonopioid_pain_prop.pdf"), width = 10, height = 7)
+ggsave(file = file.path(result_dir, "nonopioid_pain_prop.pdf"), width = 8, height = 6)
 
 
 
