@@ -134,9 +134,10 @@ p <- ggplot(results, aes(x = year, y=counselling_prop, color = race_ethnicity)) 
                     ymax = counselling_prop + 1.96*counselling_se),
                 width = 1, position = position_dodge(0.2)) +
   labs(color = 'Race and Ethnicity') +
-  theme_classic()
+  theme_light() +
+  theme(strip.text = element_text(color = "black")) # Set facet text to black
 p
-ggsave(file = file.path(result_dir, "counselling_prop.pdf"), width = 8, height = 6)
+ggsave(file = file.path(result_dir, "counselling_prop.pdf"), width = 6, height = 4.5)
 
 
 p <- ggplot(results, aes(x = year, y=physical_therapy_prop, color = race_ethnicity)) +
@@ -150,9 +151,10 @@ p <- ggplot(results, aes(x = year, y=physical_therapy_prop, color = race_ethnici
                     ymax = physical_therapy_prop + 1.96*physical_therapy_se),
                 width = 1, position = position_dodge(0.2)) +
   labs(color = 'Race and Ethnicity') +
-  theme_classic()
+  theme_light() +
+  theme(strip.text = element_text(color = "black")) # Set facet text to black
 p
-ggsave(file = file.path(result_dir, "physical_therapy_prop.pdf"), width = 8, height = 6)
+ggsave(file = file.path(result_dir, "physical_therapy_prop.pdf"), width = 6, height = 4.5)
 
 
 
@@ -167,9 +169,10 @@ p <- ggplot(results, aes(x = year, y=acupuncture_prop, color = race_ethnicity)) 
                     ymax = acupuncture_prop + 1.96*acupuncture_se),
                 width = 1, position = position_dodge(0.2)) +
   labs(color = 'Race and Ethnicity') +
-  theme_classic()
+  theme_light() +
+  theme(strip.text = element_text(color = "black")) # Set facet text to black
 p
-ggsave(file = file.path(result_dir, "acupuncture_prop.pdf"), width = 8, height = 6)
+ggsave(file = file.path(result_dir, "acupuncture_prop.pdf"), width = 6, height = 4.5)
 
 
 
@@ -184,9 +187,10 @@ p <- ggplot(results, aes(x = year, y=chiropractic_prop, color = race_ethnicity))
                     ymax = chiropractic_prop + 1.96*chiropractic_se),
                 width = 1, position = position_dodge(0.2)) +
   labs(color = 'Race and Ethnicity') +
-  theme_classic()
+  theme_light() +
+  theme(strip.text = element_text(color = "black")) # Set facet text to black
 p
-ggsave(file = file.path(result_dir, "chiropractic_prop.pdf"), width = 8, height = 6)
+ggsave(file = file.path(result_dir, "chiropractic_prop.pdf"), width = 6, height = 4.5)
 
 
 
@@ -202,9 +206,10 @@ p <- ggplot(results, aes(x = year, y=nonopioid_pain_prop, color = race_ethnicity
                     ymax = nonopioid_pain_prop + 1.96*nonopioid_pain_se),
                 width = 1, position = position_dodge(0.2)) +
   labs(color = 'Race and Ethnicity') +
-  theme_classic()
+  theme_light() +
+  theme(strip.text = element_text(color = "black")) # Set facet text to black
 p
-ggsave(file = file.path(result_dir, "nonopioid_pain_prop.pdf"), width = 8, height = 6)
+ggsave(file = file.path(result_dir, "nonopioid_pain_prop.pdf"), width = 6, height = 4.5)
 
 
 

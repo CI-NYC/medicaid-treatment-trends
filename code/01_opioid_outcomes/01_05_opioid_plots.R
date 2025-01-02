@@ -158,7 +158,8 @@ p <- ggplot(results, aes(x = year, y=opioid_prop, color = race_ethnicity)) +
                     ymax = opioid_prop + 1.96*se_opioid_prop),
                 width = 1, position = position_dodge(0.2)) +
   labs(color = 'Race and Ethnicity') +
-  theme_classic()
+  theme_light() +
+  theme(strip.text = element_text(color = "black")) # Set facet text to black
 p
 ggsave(file = file.path(result_dir, "opioid_prop.pdf"), width = 6, height = 4.5)
 
@@ -173,7 +174,8 @@ p <- ggplot(results, aes(x = year, y=average_mme, color = race_ethnicity)) +
                     ymax = average_mme + 1.96*se_mme),
                 width = 1, position = position_dodge(0.2)) +
   labs(color = 'Race and Ethnicity') +
-  theme_classic()
+  theme_light() +
+  theme(strip.text = element_text(color = "black")) # Set facet text to black
 p
 ggsave(file = file.path(result_dir, "average_mme.pdf"), width = 6, height = 4.5)
 
@@ -189,6 +191,7 @@ p <- ggplot(results, aes(x = year, y=average_days_covered, color = race_ethnicit
                     ymax = average_days_covered + 1.96*se_days_covered),
                 width = 1, position = position_dodge(0.2)) +
   labs(color = 'Race and Ethnicity') +
-  theme_classic()
+  theme_light() +
+  theme(strip.text = element_text(color = "black")) # Set facet text to black
 p
 ggsave(file = file.path(result_dir, "average_days_covered.pdf"), width = 6, height = 4.5)
