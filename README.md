@@ -1,4 +1,4 @@
-# medicaid_treatment_trends
+# medicaid-treatment-trends
 
 ## Causal question:
 
