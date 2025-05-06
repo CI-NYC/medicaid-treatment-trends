@@ -66,7 +66,7 @@ for (my_year in 2016:2019) {
   toc()
   
   setDT(elig_long)
-  last_elig_cal <- elig_long[elig_dt %within% interval(followup_start_dt, followup_end_dt), ][order(elig_dt)] |>
+  last_elig_cal <- elig_long[elig_dt %within% interval(washout_start_dt, followup_start_dt-1), ][order(elig_dt)] |>
     group_by(BENE_ID) |>
     slice_tail(n = 1) |>
     ungroup() |>

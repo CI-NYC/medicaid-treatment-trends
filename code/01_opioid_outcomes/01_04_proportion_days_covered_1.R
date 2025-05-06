@@ -18,11 +18,12 @@ save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
 
 for (my_year in 2016:2019) {
   
-  dts_cohorts <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_full.rds")))
+  dts_cohorts <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_pain_only.rds")))
   # setDT(dts_cohorts)
   # setkey(dts_cohorts, BENE_ID)
   
-  otl <- readRDS(file.path(save_dir, my_year, paste0(my_year,"_otl_opioid_pain_rx.rds")))
+  otl <- readRDS(file.path(save_dir, my_year, paste0(my_year,"_otl_opioid_pain_rx.rds"))) |>
+    filter(setting == "other_outpatient")
   rxl <- readRDS(file.path(save_dir, my_year, paste0(my_year,"_rxl_opioid_pain_rx.rds")))
   
   prop_days_covered <- function(data) {
@@ -65,7 +66,7 @@ for (my_year in 2016:2019) {
   
   plan(multisession, workers = 10)
   
-  opioids$mediator_opioid_days_covered <- 
+  opioids$opioid_days_covered_outpatient <- 
     foreach(x = opioids$data, 
             .combine = "c",
             .options.future = list(chunk = 1e4)) %dofuture% {
@@ -76,9 +77,9 @@ for (my_year in 2016:2019) {
   
   opioids <- select(dts_cohorts, BENE_ID) |> 
     left_join(select(opioids, -data)) |> 
-    mutate(mediator_opioid_days_covered = replace_na(mediator_opioid_days_covered, 0))
+    mutate(opioid_days_covered_outpatient = replace_na(opioid_days_covered_outpatient, 0))
   
   # saveRDS(opioids, file.path(save_dir, "trends_proportion_days_covered.rds"))
-  saveRDS(opioids, file.path(save_dir, my_year, paste0(my_year,"_proportion_days_covered.rds")))
+  saveRDS(opioids, file.path(save_dir, my_year, paste0(my_year,"_proportion_days_covered_outpatient.rds")))
   
 }

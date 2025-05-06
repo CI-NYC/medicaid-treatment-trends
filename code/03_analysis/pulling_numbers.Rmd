@@ -102,6 +102,9 @@ sum(opioid[race_ethnicity=="Asian, non-Hispanic", num_opioid])/sum(opioid[race_e
 
 sum(opioid[race_ethnicity=="Asian, non-Hispanic", total_mme])/sum(opioid[race_ethnicity=="Asian, non-Hispanic", num_opioid])
 
+sum(opioid[race_ethnicity=="Asian, non-Hispanic" & pain_or_disability=="chronic pain only", total_mme])/
+  sum(opioid[race_ethnicity=="Asian, non-Hispanic" & pain_or_disability=="chronic pain only", num_opioid])
+
 sum(opioid[race_ethnicity=="Asian, non-Hispanic", total_days])/sum(opioid[race_ethnicity=="Asian, non-Hispanic", num_opioid])
 
 ```
@@ -115,6 +118,9 @@ sum(opioid[race_ethnicity=="White, non-Hispanic", num_opioid])/
   sum(opioid[race_ethnicity=="White, non-Hispanic", number_of_beneficiaries])
 
 sum(opioid[race_ethnicity=="White, non-Hispanic", total_mme])/sum(opioid[race_ethnicity=="White, non-Hispanic", num_opioid])
+
+sum(opioid[race_ethnicity=="White, non-Hispanic" & pain_or_disability=="chronic pain only", total_mme])/
+  sum(opioid[race_ethnicity=="White, non-Hispanic" & pain_or_disability=="chronic pain only", num_opioid])
 
 sum(opioid[race_ethnicity=="White, non-Hispanic", total_days])/sum(opioid[race_ethnicity=="White, non-Hispanic", num_opioid])
 ```
@@ -240,3 +246,23 @@ sum(alternate[year == "2019", num_chiropractic])/
   sum(alternate[year == "2019", number_of_beneficiaries])*100
 ```
 
+
+# TREATMENT Counseling + chiropractic
+# AMONG White 
+# VS Asian
+# WITH CHRONIC PAIN
+# IN THE YEAR 2019
+```{r}
+# see 02_06_subgroup_exploration.R
+```
+
+
+
+# TREATMENT Acupuncture + physical therapy
+# AMONG ASIAN 
+# VS WHITE
+# WITH CHRONIC PAIN
+# IN THE YEAR 2019
+```{r}
+# see 02_06_subgroup_exploration.R
+```

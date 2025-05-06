@@ -9,6 +9,7 @@ library(tidyverse)
 
 save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
 result_dir <- "~/medicaid/medicaid_treatment_trends/output/adjusted_plots"
+my_palette <- c("#b2182b","#ef8a62","#fddbc7","#d1e5f0","#67a9cf","#2166ac")
 
 years <- c(2016:2019)
 # pain_groups <- c("chronic pain only", "disability and chronic pain")
@@ -38,14 +39,22 @@ df <- df |>
             has_nonopioid_pain_rx = mean(has_nonopioid_pain_rx)) |>
   left_join(race_names)
 
+# Cleaning race names
+races <- data.frame(race_ethnicity = c("race_multi_na","race_white","race_black","race_hispanic","race_aian_hpi","race_asian"),
+                    race_name = c("Multiracial or missing","White, non-Hispanic","Black, non-Hispanic","Hispanic, all races","AIAN or HPI","Asian, non-Hispanic"))
+
+results <- df |>
+  left_join(races) |>
+  select(-race_ethnicity, race_ethnicity=race_name)
 
 plot_function <- function(df, treatment_category, title, ylabel){
-  p <- ggplot(df, aes(x = year, y=!!sym(treatment_category), color = dem_race_cond)) +
+  p <- ggplot(df, aes(x = year, y=!!sym(treatment_category), color = race_ethnicity)) +
     geom_jitter(position=position_dodge(0.2)) +
-    geom_line(aes(group = dem_race_cond), position=position_dodge(0.2)) +
-    ggtitle(title) +
+    geom_line(aes(group = race_ethnicity), position=position_dodge(0.2)) +
+    # ggtitle(title) +
     ylab(ylabel) +
-    facet_wrap(~factor(pain_or_disability, levels = c("chronic pain only","disability only","disability and chronic pain","neither"))) +
+    facet_wrap(~ str_to_title(factor(pain_or_disability, levels = c("chronic pain only", "disability only", "disability and chronic pain", "neither")))) +
+    scale_color_manual(values = my_palette) +
     labs(color = 'Race and Ethnicity') +
     theme_light() +
     theme(strip.text = element_text(color = "black")) # Set facet text to black
@@ -54,19 +63,19 @@ plot_function <- function(df, treatment_category, title, ylabel){
 }
 
 
-plot_function(df,"opioid_yn","Proportion of beneficiaries who were prescribed an opioid","Proportion")
+plot_function(results,"opioid_yn","Proportion of beneficiaries who were prescribed an opioid","Proportion (95% CI)")
 
-plot_function(df,"mediator_mean_daily_dose_mme","Average daily MME","MME per day")
+plot_function(results,"mediator_mean_daily_dose_mme","Average daily MME","MME per day (95% CI)")
 
-plot_function(df,"mediator_opioid_days_covered","Average proportion of days covered for opioids","Proportion days covered")
+plot_function(results,"mediator_opioid_days_covered","Average proportion of days covered for opioids","Proportion days covered (95% CI)")
 
-plot_function(df,"has_counseling","Proportion of beneficiaries receiving counseling","Proportion")
+plot_function(results,"has_counseling","Proportion of beneficiaries receiving counseling","Proportion (95% CI)")
 
-plot_function(df,"has_nonopioid_pain_rx","Proportion of beneficiaries receiving non-opioid pain medication","Proportion")
+plot_function(results,"has_nonopioid_pain_rx","Proportion of beneficiaries receiving non-opioid pain medication","Proportion (95% CI)")
 
-plot_function(df,"has_acupuncture","Proportion of beneficiaries receiving acupuncture","Proportion")
+plot_function(results,"has_acupuncture","Proportion of beneficiaries receiving acupuncture","Proportion (95% CI)")
 
-plot_function(df,"has_physical_therapy","Proportion of beneficiaries receiving physical therapy","Proportion")
+plot_function(results,"has_physical_therapy","Proportion of beneficiaries receiving physical therapy","Proportion (95% CI)")
 
-plot_function(df,"has_chiropractic","Proportion of beneficiaries receiving chiropractic work","Proportion")
+plot_function(results,"has_chiropractic","Proportion of beneficiaries receiving chiropractic work","Proportion (95% CI)")
 

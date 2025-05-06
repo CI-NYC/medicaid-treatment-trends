@@ -33,8 +33,6 @@ for (i in 0:10) {
   cohort_2016 <- rbind(cohort_2016, readRDS(file.path(load_dir, "2016", paste0("cohort_",2016,"_",i,".rds"))))
 }
 
-desc_cohort <- readRDS("/mnt/general-data/disability/create_cohort/final/desc_cohort.rds")
-
 
 
 ########## STATES exclusions
@@ -48,34 +46,53 @@ files <- paste0(list.files(src_root, pattern = "TAFDEBSE", recursive = TRUE))
 parquet_files <- grep("\\.parquet$", files, value = TRUE)
 dbs <- open_dataset(file.path(src_root, parquet_files))
 
-states <- dbs |> 
-  select(BENE_ID, STATE_CD) |>
+exclusion_state_2016 <- dbs |> 
+  select(BENE_ID, STATE_CD, RFRNC_YR) |>
+  filter(BENE_ID %in% cohort_2016$BENE_ID,
+         RFRNC_YR=="2016",
+         STATE_CD %in% c("MD", "RI")) |> 
   collect() |>
-  filter(!is.na(BENE_ID)) |>
-  distinct()
-
-exclusion_state_2016_2019 <- states |> 
-  filter(STATE_CD %in% c("MD", "RI")) |> 
   distinct(BENE_ID) |>
-  mutate(cohort_exclusion_state = 1)
+  mutate(cohort_exclusion_state=1)
 
-exclusion_state_2017_2018 <- states |> 
-  filter(STATE_CD %in% c("MD","RI","MI")) |> 
+exclusion_state_2019 <- dbs |> 
+  select(BENE_ID, STATE_CD, RFRNC_YR) |>
+  filter(BENE_ID %in% cohort_2019$BENE_ID,
+         RFRNC_YR=="2019",
+         STATE_CD %in% c("MD", "RI")) |> 
+  collect() |>
   distinct(BENE_ID) |>
-  mutate(cohort_exclusion_state = 1)
+  mutate(cohort_exclusion_state=1)
 
+exclusion_state_2017 <- dbs |> 
+  select(BENE_ID, STATE_CD, RFRNC_YR) |>
+  filter(BENE_ID %in% cohort_2017$BENE_ID,
+         RFRNC_YR=="2017",
+         STATE_CD %in% c("MD", "RI", "MI")) |> 
+  collect() |>
+  distinct(BENE_ID) |>
+  mutate(cohort_exclusion_state=1)
+
+exclusion_state_2018 <- dbs |> 
+  select(BENE_ID, STATE_CD, RFRNC_YR) |>
+  filter(BENE_ID %in% cohort_2018$BENE_ID,
+         RFRNC_YR=="2018",
+         STATE_CD %in% c("MD", "RI", "MI")) |> 
+  collect() |>
+  distinct(BENE_ID) |>
+  mutate(cohort_exclusion_state=1)
 
 cohort_2016 <- cohort_2016 |>
-  filter(!BENE_ID %in% exclusion_state_2016_2019$BENE_ID)
+  filter(!BENE_ID %in% exclusion_state_2016$BENE_ID)
 
 cohort_2017 <- cohort_2017 |>
-  filter(!BENE_ID %in% exclusion_state_2017_2018$BENE_ID)
+  filter(!BENE_ID %in% exclusion_state_2017$BENE_ID)
 
 cohort_2018 <- cohort_2018 |>
-  filter(!BENE_ID %in% exclusion_state_2017_2018$BENE_ID)
+  filter(!BENE_ID %in% exclusion_state_2018$BENE_ID)
 
 cohort_2019 <- cohort_2019 |>
-  filter(!BENE_ID %in% exclusion_state_2016_2019$BENE_ID)
+  filter(!BENE_ID %in% exclusion_state_2019$BENE_ID)
 
 
 

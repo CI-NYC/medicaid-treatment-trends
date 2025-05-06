@@ -31,22 +31,17 @@ library(furrr)
 
 save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
 
-# # Read in cohort and dates
-# dts_cohorts <- readRDS("/mnt/general-data/disability/create_cohort/final/desc_cohort.rds")
-# setDT(dts_cohorts)
-# dts_cohorts <- dts_cohorts[opioid_pain_washout_12mos_cal == 1, .(BENE_ID, washout_cal_end_dt)]
-# setkey(dts_cohorts, BENE_ID)
 
-all_opioids_clean <- readRDS("/mnt/general-data/disability/mediation_unsafe_pain_mgmt/all_pain_opioids.rds")
+all_opioids_clean <- readRDS("/mnt/general-data/disability/post_surgery_opioid_use/tmp/opioid_data/all_pain_opioids.rds")
 setDT(all_opioids_clean)
 setkey(all_opioids_clean, BENE_ID)
-all_opioids_clean <- all_opioids_clean[, .(BENE_ID, NDC, opioid, mme_strength_per_day, rx_start_dt, rx_end_dt)]
+all_opioids_clean <- all_opioids_clean[setting == "other_outpatient", .(BENE_ID, NDC, opioid, mme_strength_per_day, rx_start_dt, rx_end_dt)]
 
 
 # repeat daily mean mme calculations for each year
 for (my_year in 2016:2019) {
 
-  dts_cohorts <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_full.rds")))
+  dts_cohorts <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_pain_only.rds")))
   # dts_cohorts <- dts_cohorts[1:100,]
   setDT(dts_cohorts)
   setkey(dts_cohorts, BENE_ID)
@@ -61,7 +56,7 @@ for (my_year in 2016:2019) {
       all_opioids_clean_merged$followup_start_dt, all_opioids_clean_merged$followup_end_dt
     ), 
   ]
-  
+
   # Calculate max daily dose -----------------------------------------------------
   
   # Group by beneficiary and create a list column containing each beneficiairy's data
@@ -76,13 +71,13 @@ for (my_year in 2016:2019) {
     
     # Calculate the date limit based on washout_cal_end_dt + 182 days
     washout_date_limit <- to_modify$followup_end_dt
-    
-    long <- to_modify[, .(date = seq(rx_start_dt, rx_end_dt -1, by = "1 day"), 
+
+    long <- to_modify[, .(date = seq(rx_start_dt, rx_end_dt, by = "1 day"), 
                           NDC, opioid, mme_strength_per_day), by = .(seq_len(nrow(data)))
     ][date <= washout_date_limit, ]  # Filter rows based on date limit
-    
-    long[, .(total_mme_strength = sum(mme_strength_per_day, na.rm = TRUE)), by = .(date)
-    ][, .(mediator_mean_daily_dose_mme = mean(total_mme_strength))]
+
+        long[, .(total_mme_strength = sum(mme_strength_per_day, na.rm = TRUE)), by = .(date)
+    ][, .(mean_daily_dose_mme_outpatient = mean(total_mme_strength))]
   }
   
   tic()
@@ -102,17 +97,17 @@ for (my_year in 2016:2019) {
   
   plan(sequential)
   out <- out |>
-    mutate(mediator_mean_daily_dose_mme = pmin(mediator_mean_daily_dose_mme, quantile(mediator_mean_daily_dose_mme,0.99)))
+    mutate(mean_daily_dose_mme_outpatient = pmin(mean_daily_dose_mme_outpatient, quantile(mean_daily_dose_mme_outpatient,0.99)))
   toc()
   
   # Right join with cohort
   mean_daily_dose <- merge(out, dts_cohorts[, .(BENE_ID)], all.y = TRUE, by = "BENE_ID")
   
   # Convert NAs to 0 for observations in the cohort that didn't have a claim
-  mean_daily_dose[, mediator_mean_daily_dose_mme := fifelse(is.na(mediator_mean_daily_dose_mme), 0, mediator_mean_daily_dose_mme)]
+  mean_daily_dose[, mean_daily_dose_mme_outpatient := fifelse(is.na(mean_daily_dose_mme_outpatient), 0, mean_daily_dose_mme_outpatient)]
   
   # Save final dataset -----------------------------------------------------------
   
-  saveRDS(mean_daily_dose, file.path(save_dir, my_year, paste0(my_year, "_mean_daily_dose_mme.rds")))
+  saveRDS(mean_daily_dose, file.path(save_dir, my_year, paste0(my_year, "_mean_daily_dose_mme_outpatient.rds")))
 
 }

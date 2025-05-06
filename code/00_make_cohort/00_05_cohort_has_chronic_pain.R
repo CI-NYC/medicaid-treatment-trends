@@ -37,28 +37,6 @@ save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
 for (my_year in 2016:2019) {
   
   dts_cohorts <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_full.rds")))
-  # dts_cohorts <- dts_cohorts[1:1000,]
-  
-  ############################################################################
-  ############################################################################
-  # Step 4: add indicators for when the minimum date of pain occurred
-  ############################################################################
-  ############################################################################
-  
-  
-  # get minimum pain date after washout period starts
-  # pain_min <- pain_all |>
-  #   filter(BENE_ID %in% cohort_2016$BENE_ID) |>
-  #   left_join(cohort_2016) |>
-  #   filter(dgcd_dt %within% interval(followup_start_dt, followup_end_dt)) |>
-  #   group_by(BENE_ID) |>
-  #   arrange(dgcd_dt) |> 
-  #   filter(row_number() == 1) |>
-  #   select(BENE_ID, pain_dt = dgcd_dt)
-  # 
-  # saveRDS(pain_min, "data/tmp/pain_min.rds")
-  
-  # pain_min <- read_rds("data/tmp/pain_min.rds")
   
   chronic_pain_icds <- read.csv("/home/amh2389/medicaid/medicaid_treatment_trends/code/00_make_cohort/chronic_pain_icd10_20230216.csv") |>
     filter(CRITERIA == "Inclusion")
@@ -95,37 +73,37 @@ for (my_year in 2016:2019) {
   headaches_df <-
     pain_all_adj |>
     filter(pain_cat == "Headache") |>
-    left_join(dts_cohorts |> select(BENE_ID, followup_start_dt, followup_end_dt)) 
+    left_join(dts_cohorts |> select(BENE_ID, washout_start_dt, followup_start_dt)) 
   
   arthritis_df <-
     pain_all_adj |>
     filter(pain_cat == "Arthritis/Joint/Bone Pain (Other than Back/Neck)") |>
-    left_join(dts_cohorts |> select(BENE_ID, followup_start_dt, followup_end_dt)) 
+    left_join(dts_cohorts |> select(BENE_ID, washout_start_dt, followup_start_dt)) 
   
   back_df <-
     pain_all_adj |>
     filter(pain_cat == "Back Pain") |>
-    left_join(dts_cohorts |> select(BENE_ID, followup_start_dt, followup_end_dt)) 
+    left_join(dts_cohorts |> select(BENE_ID, washout_start_dt, followup_start_dt)) 
   
   backneck_unsp_df <-
     pain_all_adj |>
     filter(pain_cat == "Back/Neck Pain Unspecified") |>
-    left_join(dts_cohorts |> select(BENE_ID, followup_start_dt, followup_end_dt)) 
+    left_join(dts_cohorts |> select(BENE_ID, washout_start_dt, followup_start_dt)) 
   
   misc_df <-
     pain_all_adj |>
     filter(pain_cat == "Misc Pain") |>
-    left_join(dts_cohorts |> select(BENE_ID, followup_start_dt, followup_end_dt)) 
+    left_join(dts_cohorts |> select(BENE_ID, washout_start_dt, followup_start_dt)) 
   
   neck_df <-
     pain_all_adj |>
     filter(pain_cat == "Neck Pain") |>
-    left_join(dts_cohorts |> select(BENE_ID, followup_start_dt, followup_end_dt)) 
+    left_join(dts_cohorts |> select(BENE_ID, washout_start_dt, followup_start_dt)) 
   
   neuro_df <-
     pain_all_adj |>
     filter(pain_cat == "Neurologic Pain") |>
-    left_join(dts_cohorts |> select(BENE_ID, followup_start_dt, followup_end_dt)) 
+    left_join(dts_cohorts |> select(BENE_ID, washout_start_dt, followup_start_dt)) 
   
   
   
@@ -137,8 +115,8 @@ for (my_year in 2016:2019) {
     relevant_pain_dts <-
       pain_cat_df |>
       # keep only codes within the 6 month window of interest
-      mutate(start_month = followup_start_dt,
-             end_month = followup_end_dt) |>
+      mutate(start_month = washout_start_dt,
+             end_month = followup_start_dt-1) |>
       # then, filter the diagnosis codes to only contain those filled within the relevant time frame
       filter(dgcd_dt %within% interval(start_month, end_month)) |>
       group_by(BENE_ID, pain_cat) |>
