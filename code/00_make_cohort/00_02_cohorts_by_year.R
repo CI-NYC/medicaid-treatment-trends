@@ -10,7 +10,7 @@ library(doFuture)
 library(lubridate)
 library(dplyr)
 
-my_year <- 2017
+my_year <- 2017 # run separately for each year (2016, 2017, 2019, 2019)
 
 cohort <- readRDS("/mnt/general-data/disability/create_cohort/final/desc_cohort.rds") |>
   filter(year(washout_start_dt) <= my_year)

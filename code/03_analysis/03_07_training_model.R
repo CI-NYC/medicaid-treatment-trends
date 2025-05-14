@@ -14,50 +14,63 @@ options(future.globals.maxSize = 1e9)  # Increase to 1 GB
 save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
 
 # pain groups
-# pain_groups <- c("chronic pain only", "disability only", "disability and chronic pain", "neither")
-pain_groups <- c("disability only")
+pain_groups <- c("chronic pain only", "disability and chronic pain")
+# pain_groups <- c(˛"disability only")
 
 year <- 2017
 
-treatments <- c("opioid_yn",
-              "mediator_mean_daily_dose_mme",
-              "mediator_opioid_days_covered",
-              "has_acupuncture",
-              "has_physical_therapy",
-              "has_chiropractic",
-              "has_counseling",
-              "has_nonopioid_pain_rx")
-treatment_type <- c("binomial",
-                    "continuous",
-                    "continuous",
-                    "binomial",
-                    "binomial",
-                    "binomial",
-                    "binomial",
-                    "binomial")
+treatments <- c(
+  "has_opioid",
+  "has_nonopioid_pain_rx",
+  "has_any_pharma",
+  "mean_daily_dose_mme_outpatient",
+  "opioid_days_covered_outpatient",
+  "has_physical_therapy",
+  "has_counseling",
+  "has_chiropractic",
+  "has_acupuncture",
+  "has_acu_chiro",
+  "has_intervention",
+  "has_any_treatment"
+)
+treatment_type <- c(
+  "binomial",
+  "binomial",
+  "binomial",
+  "continuous",
+  "continuous",
+  "binomial",
+  "binomial",
+  "binomial",
+  "binomial",
+  "binomial",
+  "binomial",
+  "binomial"
+)
 
-learners_standard <- c("mean", "glm", "lightgbm", "earth")
+learners <- c("mean", "glm", "lightgbm", "earth")
 learners_workaround <- c("glm","lightgbm", "mean")
 
 set.seed(72)
-cohort <- readRDS(file.path(save_dir, year, paste0(year, "analysis_cohort.rds")))
+cohort <- readRDS(file.path(save_dir, year, paste0(year, "_analysis_cohort.rds"))) |>
+  as.data.frame()
 
 for (pain in pain_groups){
-  if (pain == "neither"){
-    learners = learners_workaround
-  } else {
-    learners = learners_standard
-  }
+  # if (pain == "neither"){
+  #   learners = learners_workaround
+  # } else {
+  #   learners = learners_standard
+  # }
   fits <- list()
   analysis_cohort <- cohort |>
     filter(disability_pain_cal == pain)
   
   tic(paste0("Year: ", year, ", Pain group: ", pain))
   
-  for (i in 1:8){
-    if (i == 4){
-      learners = learners_workaround
-    }
+  for (i in 1:11){
+    # if (i == 4){
+    #   learners = learners_workaround
+    # }
     # print(treatments[i])
     nrare = sum(analysis_cohort[,treatments[i]])
     neff = min(nrow(analysis_cohort), 5*nrare)

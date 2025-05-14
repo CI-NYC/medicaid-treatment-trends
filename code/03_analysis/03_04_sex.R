@@ -15,11 +15,11 @@ sex <- readRDS("/mnt/general-data/disability/create_cohort/final/joined_df.rds")
 
 
 for (my_year in 2016:2019) {
-  cohort <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_full.rds")))
+  cohort <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_pain_only.rds")))
   
   cohort <- cohort |>
   left_join(sex) |>
     select(BENE_ID, SEX_M)
   
-  saveRDS(cohort, file.path(save_dir, my_year, paste0(my_year, "cohort_sex.rds")))
+  saveRDS(cohort, file.path(save_dir, my_year, paste0(my_year, "_cohort_sex.rds")))
 }

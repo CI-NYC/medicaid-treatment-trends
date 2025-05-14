@@ -30,7 +30,7 @@ birth_dates <-
 
 
 for (my_year in 2016:2019) {
-  cohort <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_full.rds")))
+  cohort <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_pain_only.rds")))
   cohort <- cohort |>
     mutate(washout_start_dt = case_when( is.na(washout_start_dt) ~ as.Date(paste0(my_year, "-01-01")), TRUE ~ washout_start_dt))
   
@@ -39,5 +39,5 @@ for (my_year in 2016:2019) {
     mutate(age_enrollment = floor(as.numeric(difftime(washout_start_dt, BIRTH_DT, units = "days") / 365.25))) |>
     select(BENE_ID, age_enrollment)
   
-  saveRDS(cohort, file.path(save_dir, my_year, paste0(my_year, "cohort_age.rds")))
+  saveRDS(cohort, file.path(save_dir, my_year, paste0(my_year, "_cohort_age.rds")))
 }

@@ -48,7 +48,7 @@ states <- dbs |>
 states <- states[!duplicated(BENE_ID)]
 
 for (my_year in 2016:2019) {
-  cohort <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_full.rds")))
+  cohort <- readRDS(file.path(save_dir, my_year, paste0("cohort_",my_year,"_pain_only.rds")))
   
   cohort <- merge(cohort, states, by = "BENE_ID", all.x = TRUE) |>
     mutate(region_west = as.numeric(region == "West"),
@@ -56,5 +56,5 @@ for (my_year in 2016:2019) {
            region_northeast = as.numeric(region == "Northeast")) |>
     select(BENE_ID, region_west, region_midwest, region_northeast)
   
-  saveRDS(cohort, file.path(save_dir, my_year, paste0(my_year, "cohort_region.rds")))
+  saveRDS(cohort, file.path(save_dir, my_year, paste0(my_year, "_cohort_region.rds")))
 }
