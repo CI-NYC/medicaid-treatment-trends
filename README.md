@@ -12,7 +12,7 @@ Starting with Kat Hoffman's cohort, <a href="https://github.com/CI-NYC/disabilit
 For every beneficiary in the cohort, we want to follow them for every year that they are continuously enrolled. This means that 
 Washout period: Beneficiaries are required to be continuously enrolled for a 6-month washout period.
 
-Follow-up period: Beneficiaries will be followed for 6 months directly after washout. All strata/exposures and outcomes are measured within this follow-up period.
+Follow-up period: Beneficiaries will be followed for 6 months directly after washout. All outcomes are measured within this follow-up period.
 
 There are 4 "cohorts". Eligiblity criteria explained below:
 - Each cohort contains beneficiaries who are eligible for one of the 4 years, 2016-2019.
@@ -21,7 +21,7 @@ There are 4 "cohorts". Eligiblity criteria explained below:
 
 ## Procedure
 
-1. Starting with the cohort used in the total effects paper (first author, Kat Hoffman). Except, ignoring the exclusion criteria that excludes those with an enrollment date of Jan 1 2016. This cohort has ~ 13.5 million people. We will stratify the cohort based on 3 variables: year, race/ethnicity, pain/disability.
+1. Starting with the cohort used in the disability / chronic pain paper (first author, Kat Hoffman). Except, ignoring the exclusion criteria that excludes those with an enrollment date of Jan 1 2016. This cohort has ~ 13.5 million people. We will stratify the cohort based on 3 variables: year, race/ethnicity, pain/disability.
 
 2. Explanation for the `year` variable: Individuals in the original cohort will be followed for every year that they are continuously enrolled. This means that they may be assigned to multiple stratum if they are eligible for multiple years.
 
