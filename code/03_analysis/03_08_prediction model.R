@@ -9,6 +9,8 @@ library(mlr3superlearner)
 save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
 
 my_year <- 2019
+# repeat for 2016,2017,2018,2019
+
 pain_groups <- c("chronic pain only", "disability and chronic pain")
 # pain_groups <- c("chronic pain only", "disability only", "disability and chronic pain")
 # pain_groups <- c("neither")
@@ -39,8 +41,7 @@ treatments <- c("has_opioid",
 cohort <- readRDS(file.path(save_dir, my_year, paste0(my_year, "_analysis_cohort.rds")))
 
 for (pain in pain_groups){
-  fit <- append(readRDS(file.path(save_dir, my_year, glue("{my_year}_{pain}_mlr3_results.rds"))),
-                        readRDS(file.path(save_dir, my_year, glue("{my_year}_{pain}_mlr3_results_any_treatment.rds"))))
+  fit <- readRDS(file.path(save_dir, my_year, glue("{my_year}_{pain}_mlr3_results.rds")))
   predictions_pain_group <- data.frame()
   
   analysis_cohort <- cohort |>

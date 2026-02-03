@@ -14,7 +14,8 @@ library(data.table)
 library(dplyr)
 result_dir <- "~/medicaid/medicaid-treatment-trends/output"
 
-opioid <- read.csv("/Users/anton/Library/CloudStorage/OneDrive-ColumbiaUniversityIrvingMedicalCenter/2025/magda/new_results/results_250513.csv")
+# opioid <- read.csv("/Users/anton/Library/CloudStorage/OneDrive-ColumbiaUniversityIrvingMedicalCenter/2025/magda/new_results/results_250513.csv")
+opioid <- read.csv(file.path(result_dir, "results_250513.csv"))
 
 # alternate <- read.csv("/Users/anton/Library/CloudStorage/OneDrive-ColumbiaUniversityIrvingMedicalCenter/2025/magda/new_results/additional_outcomes_results_25_05_13.csv")
 alternate <- read.csv(file.path(result_dir, "additional_outcomes_results_25_05_13.csv"))
@@ -22,7 +23,9 @@ alternate <- read.csv(file.path(result_dir, "additional_outcomes_results_25_05_1
 setDT(opioid)
 opioid <- opioid[ ,-"X"]
 setDT(alternate)
-alternate <- alternate[ ,-"X"]
+alternate <- alternate[ ,-"X"] |>
+  mutate(n_acupuncture_outpatient = as.numeric(n_acupuncture_outpatient))
+
 
 # opioid[, n_opioid_outpatient := number_of_beneficiaries*opioid_prop]
 opioid[, total_mme := n_opioid_outpatient*average_mme_outpatient]
@@ -35,6 +38,42 @@ opioid[, total_days := n_opioid_outpatient*average_days_covered_outpatient]
 # alternate[, num_acupuncture := number_of_beneficiaries*acupuncture_prop]
 # alternate[, num_nonopioid := number_of_beneficiaries*nonopioid_pain_prop]
 # alternate[, num_counselling := number_of_beneficiaries*counselling_prop]
+
+```
+
+# Any treatment
+```{r}
+sum(alternate[pain_or_disability=="chronic pain only", n_any_treatment] /
+      sum(alternate[pain_or_disability=="chronic pain only", number_of_beneficiaries]))
+
+sum(alternate[pain_or_disability=="disability and chronic pain", n_any_treatment] /
+      sum(alternate[pain_or_disability=="disability and chronic pain", number_of_beneficiaries]))
+
+```
+# Among white with chronic pain, asian with chronic pain
+```{r}
+print("White")
+sum(alternate[pain_or_disability=="chronic pain only" &
+                race_ethnicity=="White, non-Hispanic", n_any_treatment] /
+      sum(alternate[pain_or_disability=="chronic pain only" &
+                race_ethnicity=="White, non-Hispanic", number_of_beneficiaries]))
+
+print("Asian")
+sum(alternate[pain_or_disability=="chronic pain only" &
+                race_ethnicity=="Asian, non-Hispanic", n_any_treatment] /
+      sum(alternate[pain_or_disability=="chronic pain only" &
+                race_ethnicity=="Asian, non-Hispanic", number_of_beneficiaries]))
+
+```
+
+
+# Pharmacologic
+## all opioid vs non-opioid
+```{r}
+sum(opioid[, n_opioid_outpatient] /
+      sum(opioid[, number_of_beneficiaries]))
+sum(opioid[, n_nonopioid_outpatient] /
+      sum(opioid[, number_of_beneficiaries]))
 
 ```
 
@@ -156,23 +195,48 @@ sum(opioid[race_ethnicity=="AIAN_or_HPI", total_days])/sum(opioid[race_ethnicity
 
 ```
 
-
-# Additional treatments 
-
+# Opioids among Hispanic
 ```{r}
-sum(alternate[, num_nonopioid])/
-  sum(alternate[, number_of_beneficiaries])
-sum(alternate[, num_counselling])/
-  sum(alternate[, number_of_beneficiaries])
+print("MME")
+sum(opioid[race_ethnicity=="Hispanic, all races", total_mme])/sum(opioid[race_ethnicity=="Hispanic, all races", n_opioid_outpatient])
 
-sum(alternate[pain_or_disability == "disability and chronic pain", num_nonopioid])/
-  sum(alternate[pain_or_disability == "disability and chronic pain", number_of_beneficiaries])
-sum(alternate[pain_or_disability == "disability and chronic pain", num_counselling])/
-  sum(alternate[pain_or_disability == "disability and chronic pain", number_of_beneficiaries])
+print("Days covered")
+sum(opioid[race_ethnicity=="Hispanic, all races", total_days])/sum(opioid[race_ethnicity=="Hispanic, all races", n_opioid_outpatient])
 
-sum(alternate[pain_or_disability == "chronic pain only", num_physical_therapy])/
-  sum(alternate[pain_or_disability == "chronic pain only", number_of_beneficiaries])
+```
 
+# Additional treatments: 2016 vs 2019
+## counseling, pt, acupuncture, chiropractic, intervention 
+```{r}
+print("counseling")
+sum(alternate[year == "2016", n_counseling_outpatient])/
+  sum(alternate[year == "2016", number_of_beneficiaries])*100
+sum(alternate[year == "2019", n_counseling_outpatient])/
+  sum(alternate[year == "2019", number_of_beneficiaries])*100
+
+print("pt")
+sum(alternate[year == "2016", n_physical_therapy_outpatient])/
+  sum(alternate[year == "2016", number_of_beneficiaries])*100
+sum(alternate[year == "2019", n_physical_therapy_outpatient])/
+  sum(alternate[year == "2019", number_of_beneficiaries])*100
+
+print("acu")
+sum(alternate[year == "2016", n_acupuncture_outpatient], na.rm=T)/
+  sum(alternate[year == "2016", number_of_beneficiaries])*100
+sum(alternate[year == "2019", n_acupuncture_outpatient], na.rm=T)/
+  sum(alternate[year == "2019", number_of_beneficiaries])*100
+
+print("chiro")
+sum(alternate[year == "2016", n_chiropractic_outpatient])/
+  sum(alternate[year == "2016", number_of_beneficiaries])*100
+sum(alternate[year == "2019", n_chiropractic_outpatient])/
+  sum(alternate[year == "2019", number_of_beneficiaries])*100
+
+print("intervention")
+sum(alternate[year == "2016", n_intervention_outpatient])/
+  sum(alternate[year == "2016", number_of_beneficiaries])*100
+sum(alternate[year == "2019", n_intervention_outpatient])/
+  sum(alternate[year == "2019", number_of_beneficiaries])*100
 ```
 
 
@@ -218,19 +282,17 @@ sum(alternate[race_ethnicity=="Asian, non-Hispanic" &
                 year=="2019", number_of_beneficiaries])
 ```
 
-Chiro, acu and PT for chronic pain only patients
+Chiro, Acupuncture and PT
 ```{r}
+print("chronic pain")
 sum(alternate[pain_or_disability=="chronic pain only", n_chiropractic_outpatient])/
   sum(alternate[pain_or_disability=="chronic pain only", number_of_beneficiaries])
 sum(alternate[pain_or_disability=="chronic pain only", n_acupuncture_outpatient])/
   sum(alternate[pain_or_disability=="chronic pain only", number_of_beneficiaries])
 sum(alternate[pain_or_disability=="chronic pain only", n_physical_therapy_outpatient])/
   sum(alternate[pain_or_disability=="chronic pain only", number_of_beneficiaries])
-```
 
-Chiro, acu and PT for pain + disability patients
-
-```{r}
+print("pain and disability")
 sum(alternate[pain_or_disability=="disability and chronic pain", n_chiropractic_outpatient])/
   sum(alternate[pain_or_disability=="disability and chronic pain", number_of_beneficiaries])
 sum(alternate[pain_or_disability=="disability and chronic pain", n_acupuncture_outpatient], na.rm=T)/
@@ -239,38 +301,80 @@ sum(alternate[pain_or_disability=="disability and chronic pain", n_physical_ther
   sum(alternate[pain_or_disability=="disability and chronic pain", number_of_beneficiaries])
 ```
 
-# Additional treatments: 2016 vs 2019
-## counseling, pt, acupuncture, chiropractic 
+Counseling, Interventions
+```{r}
+print("chronic pain")
+sum(alternate[pain_or_disability=="chronic pain only", n_counseling_outpatient])/
+  sum(alternate[pain_or_disability=="chronic pain only", number_of_beneficiaries])
+sum(alternate[pain_or_disability=="chronic pain only", n_intervention_outpatient])/
+  sum(alternate[pain_or_disability=="chronic pain only", number_of_beneficiaries])
+
+print("pain and disability")
+sum(alternate[pain_or_disability=="disability and chronic pain", n_counseling_outpatient])/
+  sum(alternate[pain_or_disability=="disability and chronic pain", number_of_beneficiaries])
+sum(alternate[pain_or_disability=="disability and chronic pain", n_intervention_outpatient], na.rm=T)/
+  sum(alternate[pain_or_disability=="disability and chronic pain", number_of_beneficiaries])
+
+```
+
+# White, chronic pain alone
+# Counseling, Chiropractic, Interventions
 ```{r}
 print("counseling")
-sum(alternate[year == "2016", n_counseling_outpatient])/
-  sum(alternate[year == "2016", number_of_beneficiaries])*100
-sum(alternate[year == "2019", n_counseling_outpatient])/
-  sum(alternate[year == "2019", number_of_beneficiaries])*100
+sum(alternate[pain_or_disability=="chronic pain only" &
+                race_ethnicity=="White, non-Hispanic", n_counseling_outpatient])/
+  sum(alternate[pain_or_disability=="chronic pain only" &
+                race_ethnicity=="White, non-Hispanic", number_of_beneficiaries])
+print("chiropractic")
+sum(alternate[pain_or_disability=="chronic pain only" &
+                race_ethnicity=="White, non-Hispanic", n_chiropractic_outpatient])/
+  sum(alternate[pain_or_disability=="chronic pain only" &
+                race_ethnicity=="White, non-Hispanic", number_of_beneficiaries])
+print("interventions")
+sum(alternate[pain_or_disability=="chronic pain only" &
+                race_ethnicity=="White, non-Hispanic", n_intervention_outpatient])/
+  sum(alternate[pain_or_disability=="chronic pain only" &
+                race_ethnicity=="White, non-Hispanic", number_of_beneficiaries])
+```
 
-print("pt")
-sum(alternate[year == "2016", n_physical_therapy_outpatient])/
-  sum(alternate[year == "2016", number_of_beneficiaries])*100
-sum(alternate[year == "2019", n_physical_therapy_outpatient])/
-  sum(alternate[year == "2019", number_of_beneficiaries])*100
+# White, disability and pain
+# Counseling, Chiropractic, Interventions
+```{r}
+print("counseling")
+sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="White, non-Hispanic", n_counseling_outpatient])/
+  sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="White, non-Hispanic", number_of_beneficiaries])
+print("chiropractic")
+sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="White, non-Hispanic", n_chiropractic_outpatient])/
+  sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="White, non-Hispanic", number_of_beneficiaries])
+print("interventions")
+sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="White, non-Hispanic", n_intervention_outpatient])/
+  sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="White, non-Hispanic", number_of_beneficiaries])
+```
 
-print("acu")
-sum(alternate[year == "2016", n_acupuncture_outpatient], na.rm=T)/
-  sum(alternate[year == "2016", number_of_beneficiaries])*100
-sum(alternate[year == "2019", n_acupuncture_outpatient], na.rm=T)/
-  sum(alternate[year == "2019", number_of_beneficiaries])*100
-
-print("chiro")
-sum(alternate[year == "2016", n_chiropractic_outpatient])/
-  sum(alternate[year == "2016", number_of_beneficiaries])*100
-sum(alternate[year == "2019", n_chiropractic_outpatient])/
-  sum(alternate[year == "2019", number_of_beneficiaries])*100
-
-print("intervention")
-sum(alternate[year == "2016", n_intervention_outpatient])/
-  sum(alternate[year == "2016", number_of_beneficiaries])*100
-sum(alternate[year == "2019", n_intervention_outpatient])/
-  sum(alternate[year == "2019", number_of_beneficiaries])*100
+# Multiracial, disability and pain
+# Counseling, Chiropractic, Interventions
+```{r}
+print("Counseling")
+sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="Multiracial or Missing", n_counseling_outpatient])/
+  sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="Multiracial or Missing", number_of_beneficiaries])
+print("chiropractic")
+sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="Multiracial or Missing", n_chiropractic_outpatient])/
+  sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="Multiracial or Missing", number_of_beneficiaries])
+print("interventions")
+sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="Multiracial or Missing", n_intervention_outpatient])/
+  sum(alternate[pain_or_disability=="disability and chronic pain" &
+                race_ethnicity=="Multiracial or Missing", number_of_beneficiaries])
 ```
 
 
@@ -296,6 +400,13 @@ sum(alternate[year == "2019" &
   sum(alternate[year == "2019" &
                 race_ethnicity =="White, non-Hispanic" &
                 pain_or_disability=="chronic pain only", number_of_beneficiaries])*100
+print("White, intervention")
+sum(alternate[year == "2019" &
+                race_ethnicity =="White, non-Hispanic" &
+                pain_or_disability=="chronic pain only", n_intervention_outpatient])/
+  sum(alternate[year == "2019" &
+                race_ethnicity =="White, non-Hispanic" &
+                pain_or_disability=="chronic pain only", number_of_beneficiaries])*100
 print("Asian, chiro")
 sum(alternate[year == "2019" &
                 race_ethnicity =="Asian, non-Hispanic" &
@@ -307,6 +418,13 @@ print("Asian, couns")
 sum(alternate[year == "2019" &
                 race_ethnicity =="Asian, non-Hispanic" &
                 pain_or_disability=="chronic pain only", n_counseling_outpatient])/
+  sum(alternate[year == "2019" &
+                race_ethnicity =="Asian, non-Hispanic" &
+                pain_or_disability=="chronic pain only", number_of_beneficiaries])*100
+print("Asian, intervention")
+sum(alternate[year == "2019" &
+                race_ethnicity =="Asian, non-Hispanic" &
+                pain_or_disability=="chronic pain only", n_intervention_outpatient])/
   sum(alternate[year == "2019" &
                 race_ethnicity =="Asian, non-Hispanic" &
                 pain_or_disability=="chronic pain only", number_of_beneficiaries])*100
@@ -371,42 +489,7 @@ sum(opioid[pain_or_disability=="chronic pain only", n_nonopioid_outpatient])/
   sum(opioid[pain_or_disability=="chronic pain only", number_of_beneficiaries])
 ```
 
-# White
-# chronic pain alone
-```{r}
-sum(alternate[pain_or_disability=="chronic pain only" &
-                race_ethnicity=="White, non-Hispanic", n_counseling_outpatient])/
-  sum(alternate[pain_or_disability=="chronic pain only" &
-                race_ethnicity=="White, non-Hispanic", number_of_beneficiaries])
-sum(alternate[pain_or_disability=="chronic pain only" &
-                race_ethnicity=="White, non-Hispanic", n_chiropractic_outpatient])/
-  sum(alternate[pain_or_disability=="chronic pain only" &
-                race_ethnicity=="White, non-Hispanic", number_of_beneficiaries])
-```
 
-# White, then multiracial
-# both pain and disability
-```{r}
-sum(alternate[pain_or_disability=="disability and chronic pain" &
-                race_ethnicity=="White, non-Hispanic", n_counseling_outpatient])/
-  sum(alternate[pain_or_disability=="disability and chronic pain" &
-                race_ethnicity=="White, non-Hispanic", number_of_beneficiaries])
-sum(alternate[pain_or_disability=="disability and chronic pain" &
-                race_ethnicity=="White, non-Hispanic", n_chiropractic_outpatient])/
-  sum(alternate[pain_or_disability=="disability and chronic pain" &
-                race_ethnicity=="White, non-Hispanic", number_of_beneficiaries])
-```
-
-```{r}
-sum(alternate[pain_or_disability=="disability and chronic pain" &
-                race_ethnicity=="Multiracial or Missing", n_counseling_outpatient])/
-  sum(alternate[pain_or_disability=="disability and chronic pain" &
-                race_ethnicity=="Multiracial or Missing", number_of_beneficiaries])
-sum(alternate[pain_or_disability=="disability and chronic pain" &
-                race_ethnicity=="Multiracial or Missing", n_chiropractic_outpatient])/
-  sum(alternate[pain_or_disability=="disability and chronic pain" &
-                race_ethnicity=="Multiracial or Missing", number_of_beneficiaries])
-```
 
 
 

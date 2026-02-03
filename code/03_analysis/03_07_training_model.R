@@ -15,9 +15,11 @@ save_dir <- "/mnt/general-data/disability/post_surgery_opioid_use/tmp"
 
 # pain groups
 pain_groups <- c("chronic pain only", "disability and chronic pain")
-# pain_groups <- c(˛"disability only")
+# pain_groups <- c("chronic pain only", "disability only", "disability and chronic pain")
+# pain_groups <- c("neither")
 
-year <- 2017
+year <- 2019
+# repeat for 2016,2017,2018,2019
 
 treatments <- c(
   "has_opioid",
@@ -49,29 +51,21 @@ treatment_type <- c(
 )
 
 learners <- c("mean", "glm", "lightgbm", "earth")
-learners_workaround <- c("glm","lightgbm", "mean")
+# learners_workaround <- c("glm","lightgbm", "mean")
 
 set.seed(72)
 cohort <- readRDS(file.path(save_dir, year, paste0(year, "_analysis_cohort.rds"))) |>
   as.data.frame()
 
 for (pain in pain_groups){
-  # if (pain == "neither"){
-  #   learners = learners_workaround
-  # } else {
-  #   learners = learners_standard
-  # }
   fits <- list()
   analysis_cohort <- cohort |>
     filter(disability_pain_cal == pain)
   
   tic(paste0("Year: ", year, ", Pain group: ", pain))
   
-  for (i in 1:11){
-    # if (i == 4){
-    #   learners = learners_workaround
-    # }
-    # print(treatments[i])
+  for (i in 1:12){
+    # using 2 cross fit folds if the strata size is large, or 5 folds if the strata size is small
     nrare = sum(analysis_cohort[,treatments[i]])
     neff = min(nrow(analysis_cohort), 5*nrare)
     cv_folds <- ifelse(neff >= 10000, 2, 5)
